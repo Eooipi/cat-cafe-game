@@ -13,7 +13,7 @@
        暗黑霓虹咖啡馆美学变量与全局样式
        ========================================= */
     :root {
-      --bg-main: #0b0d14;
+      --bg-main: #0b0c14;
       --bg-card: #141926;
       --bg-card-hover: #1b2234;
       --neon-cyan: #22d3ee;
@@ -276,6 +276,14 @@
 <body class="neon-grid-bg flex flex-col overflow-hidden">
 
   <!-- =========================================
+       微信 / QQ 内置浏览器防切屏掉线提示条
+       ========================================= -->
+  <div id="wx-qq-banner" class="hidden w-full bg-amber-500/20 border-b border-amber-400/40 px-3 py-1.5 text-[11px] sm:text-xs text-amber-200 flex items-center justify-between gap-2 shrink-0 z-40">
+    <span class="truncate">⚠️ 检测到微信/QQ内置浏览器，建房或联机建议点右上角在系统浏览器打开，防止切屏掉线</span>
+    <button id="btn-close-wx-banner" type="button" class="shrink-0 px-2 py-0.5 rounded-lg bg-amber-400/20 hover:bg-amber-400/35 text-amber-100 font-bold">知道了</button>
+  </div>
+
+  <!-- =========================================
        全局 Toast 提示容器（替代 alert）
        ========================================= -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-sm"></div>
@@ -309,6 +317,11 @@
 
     <!-- 右侧操作按钮 -->
     <div class="flex items-center gap-2">
+      <!-- 实时网络延迟与状态灯（联机时显示） -->
+      <div id="ping-badge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#141926]/90 border border-white/10 text-[11px] font-bold text-slate-300 tabular-nums">
+        <span id="ping-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="ping-text">--ms</span>
+      </div>
       <button id="btn-leave-game" type="button" class="hidden px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-400/40 text-xs font-bold text-slate-300 hover:text-rose-200 transition active:scale-95">
         退出本局
       </button>
@@ -414,10 +427,10 @@
         <span class="text-slate-400 font-bold">5 种基础原料（从下往上叠层）：</span>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#b45309]"></i>1 浓缩咖啡</span>
-          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#f8fafc]"></i>2 冰鲜奶</span>
-          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#4ade80]"></i>3 宇治抹茶</span>
-          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#f472b6]"></i>4 草莓酱</span>
-          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#38bdf8]"></i>5 星空苏打</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#f8fafc]"></i>2 鲜奶</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#4ade80]"></i>3 抹茶</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#fb923c]"></i>4 焦糖</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#38bdf8]"></i>5 气泡冰</span>
         </div>
       </section>
     </div>
@@ -673,65 +686,112 @@
   </div>
 
   <!-- =========================================
-       核心脚本：双 CDN PeerJS 加载 + 完整 P2P/双人/肉鸽引擎
+       弹窗 3：好友端断线自动重连半透明提示层
+       ========================================= -->
+  <div id="modal-reconnecting" class="fixed inset-0 z-[100] bg-[#0b0c14]/82 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="w-full max-w-sm glass-panel border-cyan-400/45 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center gap-3">
+      <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-2xl animate-pulse">
+        📡
+      </div>
+      <h3 class="text-lg font-black text-white">网络波动 · 正在自动重连</h3>
+      <p id="reconnect-status-text" class="text-xs sm:text-sm text-cyan-200 font-semibold leading-relaxed">
+        网络波动，正在自动重连房间 ----（第 1/8 次）...
+      </p>
+      <p class="text-[11px] text-slate-400">房主将为你保留分数与席位 25 秒，连上后自动恢复对局</p>
+      <button id="btn-cancel-reconnect" type="button" class="btn-press mt-1 w-full py-2.5 px-4 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/45 text-rose-200 font-bold text-xs sm:text-sm">
+        退出房间
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================
+       核心脚本：双 CDN PeerJS 加载 + 防掉线增强版 P2P/双人/肉鸽引擎
        ========================================= -->
   <script>
     /**
      * =========================================================
-     * 1. PeerJS 双 CDN 容灾加载器
+     * 1. PeerJS 多 CDN 容灾加载器 + 多节点 STUN / OpenRelay TURN 配置
      * =========================================================
      */
     const PEERJS_CDNS = [
       'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
-      'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'
+      'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js'
     ];
 
     const PEER_CONFIG = {
       debug: 1,
       config: {
+        iceCandidatePoolSize: 10,
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun.cloudflare.com:3478' }
+          { urls: 'stun:stun.cloudflare.com:3478' },
+          { urls: 'stun:global.stun.twilio.com:3478' },
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
         ]
       }
     };
 
-    const PEER_PREFIX = 'mcc-p2p-v1-';
+    const PEER_PREFIX = 'mcc-p2p-v2-';
+    const HEARTBEAT_INTERVAL_MS = 2500;
+    const HEARTBEAT_TIMEOUT_MS = 12000;
+    const SEAT_GRACE_MS = 25000;
+    const GUEST_MAX_RETRIES = 8;
+    const SIGNAL_BACKOFF_STEPS = [1500, 3000, 6000, 12000];
+    const ROUND_DURATION = 90;
 
-    function loadScript(src) {
-      return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = src;
-        s.async = true;
-        s.onload = () => resolve();
-        s.onerror = () => {
-          s.remove();
-          reject(new Error('Failed to load ' + src));
+    function loadScriptWithTimeout(url, timeoutMs = 6000) {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+        let done = false;
+        const timer = setTimeout(() => {
+          if (done) return;
+          done = true;
+          script.remove();
+          resolve(false);
+        }, timeoutMs);
+        script.onload = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(typeof window.Peer !== 'undefined');
         };
-        document.head.appendChild(s);
+        script.onerror = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          script.remove();
+          resolve(false);
+        };
+        document.head.appendChild(script);
       });
     }
 
     async function ensurePeerJSLoaded() {
       if (typeof window.Peer !== 'undefined') return true;
-      for (const url of PEERJS_CDNS) {
-        try {
-          await loadScript(url);
-          if (typeof window.Peer !== 'undefined') return true;
-        } catch (err) {
-          console.warn('PeerJS CDN 切换中:', err.message);
-        }
+      for (const cdnUrl of PEERJS_CDNS) {
+        const loaded = await loadScriptWithTimeout(cdnUrl, 6000);
+        if (loaded && typeof window.Peer !== 'undefined') return true;
       }
       return false;
     }
-
-    /**
-     * =========================================================
-     * 2. 游戏常量配置：5 种原料、4 种猫咪、互坑道具、肉鸽强化
-     * =========================================================
-     */
-    const ROUND_DURATION = 90;
 
     const INGREDIENTS = [
       {
@@ -749,8 +809,8 @@
       },
       {
         id: 'milk',
-        name: '冰鲜奶',
-        short: '冰鲜奶',
+        name: '鲜奶',
+        short: '鲜奶',
         icon: '🥛',
         p1Key: '2',
         p2Key: 'I',
@@ -762,7 +822,7 @@
       },
       {
         id: 'matcha',
-        name: '宇治抹茶',
+        name: '抹茶',
         short: '抹茶',
         icon: '🍵',
         p1Key: '3',
@@ -774,23 +834,23 @@
         extraClass: ''
       },
       {
-        id: 'strawberry',
-        name: '草莓酱',
-        short: '草莓酱',
-        icon: '🍓',
+        id: 'caramel',
+        name: '焦糖',
+        short: '焦糖',
+        icon: '🍯',
         p1Key: '4',
         p2Key: 'P',
-        color: '#f472b6',
-        gradient: 'linear-gradient(180deg, #f472b6 0%, #db2777 100%)',
-        border: 'border-pink-400/45 hover:bg-pink-400/20',
-        text: 'text-pink-300',
+        color: '#fb923c',
+        gradient: 'linear-gradient(180deg, #fbbf24 0%, #ea580c 100%)',
+        border: 'border-orange-400/45 hover:bg-orange-400/20',
+        text: 'text-orange-300',
         extraClass: ''
       },
       {
         id: 'soda',
-        name: '星空苏打',
-        short: '苏打',
-        icon: '✨',
+        name: '气泡冰',
+        short: '气泡冰',
+        icon: '🧊',
         p1Key: '5',
         p2Key: 'L',
         color: '#38bdf8',
@@ -1179,17 +1239,29 @@
       constructor() {
         this.sound = new SoundEngine();
 
-        // 本地持久化身份
+        // 本地持久化身份（包含唯一持久 clientId，用于断线 25 秒内无感恢复席位）
         this.profile = this.loadProfile();
-        this.myId = 'cat_' + Math.random().toString(36).slice(2, 10);
+        this.myId = this.profile.clientId;
 
-        // P2P 状态
+        // P2P 连接与防掉线状态
         this.peerLibReady = false;
         this.peer = null;
         this.isHost = false;
         this.roomCode = null;
-        this.hostConns = new Map(); // Host 专用: peerId -> DataConnection
-        this.guestConn = null;      // Guest 专用: DataConnection to Host
+        this.hostConns = new Map();     // Host 专用: clientId -> { conn, lastSeen, rtt, graceTimer }
+        this.peerToClient = new Map();  // Host 专用: peerId -> clientId
+        this.guestConn = null;          // Guest 专用: DataConnection to Host
+        this.guestLastSeen = 0;
+        this.guestReconnectCount = 0;
+        this.guestReconnectTimer = null;
+        this.isGuestReconnecting = false;
+        this.currentPingMs = null;
+
+        // 心跳保活、信令指数退避与防息屏 WakeLock
+        this.heartbeatTimer = null;
+        this.signalRetryStep = 0;
+        this.signalRetryTimer = null;
+        this.wakeLock = null;
         this.hostTickTimer = null;
         this.botTimers = new Map();
 
@@ -1217,27 +1289,40 @@
         this.buildIngredientButtons();
         this.renderProfileUI();
         this.bindEvents();
+        this.detectWeChatOrQQ();
+        this.setupVisibilityHandler();
         this.bootstrapPeerJS();
         this.checkIncomingRoomParam();
       }
 
       loadProfile() {
+        const genClientId = () => 'cat_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
         try {
           const raw = localStorage.getItem('mcc_p2p_profile_v1');
           if (raw) {
             const parsed = JSON.parse(raw);
-            return {
+            const prof = {
+              clientId: parsed.clientId || genClientId(),
               name: parsed.name || RANDOM_CAT_NAMES[0],
               avatarIdx: typeof parsed.avatarIdx === 'number' ? parsed.avatarIdx : 0,
               soloBest: typeof parsed.soloBest === 'number' ? parsed.soloBest : 0
             };
+            if (!parsed.clientId) {
+              localStorage.setItem('mcc_p2p_profile_v1', JSON.stringify(prof));
+            }
+            return prof;
           }
         } catch (e) {}
-        return {
+        const fresh = {
+          clientId: genClientId(),
           name: RANDOM_CAT_NAMES[Math.floor(Math.random() * RANDOM_CAT_NAMES.length)],
           avatarIdx: Math.floor(Math.random() * CAT_BREEDS.length),
           soloBest: 0
         };
+        try {
+          localStorage.setItem('mcc_p2p_profile_v1', JSON.stringify(fresh));
+        } catch (e) {}
+        return fresh;
       }
 
       saveProfile() {
@@ -1257,6 +1342,25 @@
         }
       }
 
+      checkIncomingRoomParam() {
+        let code = '';
+        try {
+          const params = new URLSearchParams(window.location.search);
+          code = params.get('room') || '';
+        } catch (e) {}
+        if (!code && window.location.hash) {
+          const match = window.location.hash.match(/room=([0-9]{4})/);
+          if (match) code = match[1];
+        }
+        if (/^[0-9]{4}$/.test(code)) {
+          const input = document.getElementById('input-room-code');
+          const joinBtn = document.getElementById('btn-join-room');
+          if (input) input.value = code;
+          if (joinBtn) joinBtn.classList.add('join-highlight');
+          showToast(`已自动填入邀请房号 ${code}，点击「加入」即可进房！`, 'info');
+        }
+      }
+
       setConnStatus(state, text) {
         const dot = document.getElementById('conn-dot');
         const txt = document.getElementById('conn-text');
@@ -1264,7 +1368,8 @@
           loading: 'bg-amber-400 animate-pulse',
           ready: 'bg-emerald-400',
           connecting: 'bg-cyan-400 animate-pulse',
-          connected: 'bg-cyan-400',
+          connected: 'bg-emerald-400',
+          warning: 'bg-amber-400 animate-pulse',
           error: 'bg-rose-500'
         };
         dot.className = `w-1.5 h-1.5 rounded-full ${map[state] || 'bg-slate-400'}`;
@@ -1272,21 +1377,205 @@
       }
 
       /**
-       * 读取 ?room=XXXX 或 #room=XXXX，自动填入并高亮加入按钮
+       * 微信 / QQ 内置浏览器检测提示
        */
-      checkIncomingRoomParam() {
-        const params = new URLSearchParams(window.location.search);
-        let code = params.get('room');
-        if (!code && window.location.hash) {
-          const m = window.location.hash.match(/room=([0-9]{4})/);
-          if (m) code = m[1];
+      detectWeChatOrQQ() {
+        const ua = navigator.userAgent || '';
+        if (/MicroMessenger/i.test(ua) || /QQ\//i.test(ua)) {
+          const banner = document.getElementById('wx-qq-banner');
+          if (banner) {
+            banner.classList.remove('hidden');
+            banner.classList.add('flex');
+          }
         }
-        if (code && /^[0-9]{4}$/.test(code)) {
-          const input = document.getElementById('input-room-code');
-          const joinBtn = document.getElementById('btn-join-room');
-          input.value = code;
-          joinBtn.classList.add('join-highlight');
-          showToast(`已填入邀请房间号 ${code}，点击「加入」立即进入！`, 'info');
+      }
+
+      /**
+       * 屏幕防息屏 WakeLock 管理
+       */
+      async requestWakeLock() {
+        try {
+          if ('wakeLock' in navigator && !this.wakeLock) {
+            this.wakeLock = await navigator.wakeLock.request('screen');
+            this.wakeLock.addEventListener('release', () => {
+              this.wakeLock = null;
+            });
+          }
+        } catch (err) {
+          // 忽略低版本或省电模式下的不支持异常
+        }
+      }
+
+      async releaseWakeLock() {
+        try {
+          if (this.wakeLock) {
+            await this.wakeLock.release();
+            this.wakeLock = null;
+          }
+        } catch (err) {}
+      }
+
+      /**
+       * 切屏唤醒检测：回到前台立刻检查信令、触发心跳或重连
+       */
+      setupVisibilityHandler() {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState !== 'visible') return;
+          if (this.mode !== 'lobby' && this.mode !== 'online') return;
+
+          this.requestWakeLock();
+
+          if (this.peer && this.peer.disconnected && !this.peer.destroyed) {
+            this.scheduleSignalReconnect(true);
+          }
+
+          if (this.isHost) {
+            this.sendHeartbeatBurst();
+          } else if (this.roomCode) {
+            if (this.guestConn && this.guestConn.open) {
+              this.sendHeartbeatBurst();
+            } else if (!this.isGuestReconnecting) {
+              this.startGuestAutoReconnect();
+            }
+          }
+        });
+      }
+
+      /**
+       * 顶部 HUD 实时延迟与绿/黄/红状态灯更新
+       */
+      updatePingHUD(ms, forceState = null) {
+        const badge = document.getElementById('ping-badge');
+        const dot = document.getElementById('ping-dot');
+        const text = document.getElementById('ping-text');
+        if (!badge) return;
+
+        if (this.mode !== 'lobby' && this.mode !== 'online') {
+          badge.classList.add('hidden');
+          badge.classList.remove('flex');
+          return;
+        }
+
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+
+        if (forceState === 'host') {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          text.textContent = ms !== null ? `${ms}ms` : '房主直连';
+          return;
+        }
+
+        if (forceState === 'offline' || ms === null) {
+          dot.className = 'w-2 h-2 rounded-full bg-rose-500 animate-pulse';
+          text.textContent = '重连中';
+          return;
+        }
+
+        text.textContent = `${ms}ms`;
+        if (ms < 120) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        } else if (ms < 260) {
+          dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        }
+      }
+
+      /**
+       * 信令断线隔离 + 指数退避自动重连 (1.5s -> 3s -> 6s -> 12s)
+       * 绝不销毁房间或踢出玩家，已建立的 DataConnection 照常运行
+       */
+      attachSignalReconnectHandlers(peerInstance) {
+        peerInstance.on('disconnected', () => {
+          if (peerInstance !== this.peer || peerInstance.destroyed) return;
+          this.setConnStatus('warning', '信令重连中（对战不受影响）');
+          this.scheduleSignalReconnect(false);
+        });
+      }
+
+      scheduleSignalReconnect(immediate = false) {
+        if (!this.peer || this.peer.destroyed) return;
+        if (this.signalRetryTimer) {
+          clearTimeout(this.signalRetryTimer);
+          this.signalRetryTimer = null;
+        }
+        const delay = immediate
+          ? 200
+          : SIGNAL_BACKOFF_STEPS[Math.min(this.signalRetryStep, SIGNAL_BACKOFF_STEPS.length - 1)];
+
+        this.signalRetryTimer = setTimeout(() => {
+          this.signalRetryTimer = null;
+          if (!this.peer || this.peer.destroyed) return;
+          if (!this.peer.disconnected) {
+            this.signalRetryStep = 0;
+            this.setConnStatus('connected', this.isHost ? `已建房 ${this.roomCode}（房主）` : `已连接房间 ${this.roomCode}`);
+            return;
+          }
+          this.signalRetryStep += 1;
+          try {
+            this.peer.reconnect();
+          } catch (e) {}
+          // 若重连仍未成功，继续按指数退避尝试
+          setTimeout(() => {
+            if (this.peer && !this.peer.destroyed && this.peer.disconnected) {
+              this.scheduleSignalReconnect(false);
+            } else if (this.peer && !this.peer.destroyed && !this.peer.disconnected) {
+              this.signalRetryStep = 0;
+              this.setConnStatus('connected', this.isHost ? `已建房 ${this.roomCode}（房主）` : `已连接房间 ${this.roomCode}`);
+            }
+          }, 1200);
+        }, delay);
+      }
+
+      /**
+       * 应用层 2.5 秒心跳保活与 12 秒超时检测
+       */
+      startHeartbeatLoop() {
+        this.stopHeartbeatLoop();
+        this.heartbeatTimer = setInterval(() => {
+          this.sendHeartbeatBurst();
+        }, HEARTBEAT_INTERVAL_MS);
+      }
+
+      stopHeartbeatLoop() {
+        if (this.heartbeatTimer) {
+          clearInterval(this.heartbeatTimer);
+          this.heartbeatTimer = null;
+        }
+      }
+
+      sendHeartbeatBurst() {
+        const now = Date.now();
+        if (this.isHost) {
+          let maxRtt = null;
+          this.hostConns.forEach((entry, clientId) => {
+            if (!entry.conn || !entry.conn.open) return;
+            if (now - entry.lastSeen > HEARTBEAT_TIMEOUT_MS) {
+              try { entry.conn.close(); } catch (e) {}
+              this.hostHandleDisconnect(clientId);
+              return;
+            }
+            try {
+              entry.conn.send({ type: 'ping', ts: now });
+            } catch (e) {}
+            if (entry.rtt > 0) {
+              maxRtt = maxRtt === null ? entry.rtt : Math.max(maxRtt, entry.rtt);
+            }
+          });
+          this.updatePingHUD(maxRtt, 'host');
+        } else if (this.roomCode && !this.isGuestReconnecting) {
+          if (!this.guestConn || !this.guestConn.open) {
+            this.startGuestAutoReconnect();
+            return;
+          }
+          if (this.guestLastSeen > 0 && now - this.guestLastSeen > HEARTBEAT_TIMEOUT_MS) {
+            try { this.guestConn.close(); } catch (e) {}
+            this.startGuestAutoReconnect();
+            return;
+          }
+          try {
+            this.guestConn.send({ type: 'ping', ts: now });
+          } catch (e) {}
         }
       }
 
@@ -1374,6 +1663,12 @@
 
         document.getElementById('btn-home-logo').addEventListener('click', () => this.returnHome());
         document.getElementById('btn-leave-game').addEventListener('click', () => this.returnHome());
+        document.getElementById('btn-close-wx-banner').addEventListener('click', () => {
+          document.getElementById('wx-qq-banner').classList.add('hidden');
+        });
+        document.getElementById('btn-cancel-reconnect').addEventListener('click', () => {
+          this.returnHome();
+        });
         document.getElementById('btn-mute').addEventListener('click', () => {
           const muted = this.sound.toggleMute();
           document.getElementById('icon-sound-on').classList.toggle('hidden', muted);
@@ -1529,6 +1824,23 @@
        * =========================================================
        */
       cleanupAll() {
+        this.stopHeartbeatLoop();
+        this.releaseWakeLock();
+
+        if (this.signalRetryTimer) {
+          clearTimeout(this.signalRetryTimer);
+          this.signalRetryTimer = null;
+        }
+        this.signalRetryStep = 0;
+
+        if (this.guestReconnectTimer) {
+          clearTimeout(this.guestReconnectTimer);
+          this.guestReconnectTimer = null;
+        }
+        this.isGuestReconnecting = false;
+        this.guestReconnectCount = 0;
+        this.hideReconnectingModal();
+
         if (this.hostTickTimer) {
           clearInterval(this.hostTickTimer);
           this.hostTickTimer = null;
@@ -1548,10 +1860,14 @@
           try { this.guestConn.close(); } catch (e) {}
           this.guestConn = null;
         }
-        this.hostConns.forEach((c) => {
-          try { c.close(); } catch (e) {}
+        this.hostConns.forEach((entry) => {
+          if (entry.graceTimer) clearTimeout(entry.graceTimer);
+          if (entry.conn) {
+            try { entry.conn.close(); } catch (e) {}
+          }
         });
         this.hostConns.clear();
+        this.peerToClient.clear();
 
         if (this.peer) {
           try { this.peer.destroy(); } catch (e) {}
@@ -1562,6 +1878,8 @@
         this.roomCode = null;
         this.netState = null;
         this.soloPaused = false;
+        this.currentPingMs = null;
+        this.updatePingHUD(null);
         this.hideUpgradeModal();
         this.hidePodium();
       }
@@ -1576,7 +1894,7 @@
 
       /**
        * =========================================================
-       * 10. PeerJS P2P 房主逻辑（星型拓扑权威端）
+       * 10. PeerJS P2P 房主逻辑（星型拓扑权威端 + 25秒断线保席）
        * =========================================================
        */
       createP2PRoom(retryCount = 0) {
@@ -1590,43 +1908,58 @@
         this.setConnStatus('connecting', `正在创建房间 ${this.roomCode}...`);
 
         const peerId = PEER_PREFIX + this.roomCode;
-        this.peer = new window.Peer(peerId, PEER_CONFIG);
+        const peer = new window.Peer(peerId, PEER_CONFIG);
+        this.peer = peer;
+        this.attachSignalReconnectHandlers(peer);
 
-        this.peer.on('open', (id) => {
-          this.myId = id;
+        peer.on('open', () => {
+          if (peer !== this.peer) return;
+          this.signalRetryStep = 0;
           this.setConnStatus('connected', `已建房 ${this.roomCode}（房主）`);
+          this.requestWakeLock();
 
-          this.netState = {
-            roomCode: this.roomCode,
-            phase: 'lobby',
-            roundId: 0,
-            timeLeft: ROUND_DURATION,
-            orders: [],
-            players: [
-              this.makeNetPlayer(this.myId, this.profile.name, this.profile.avatarIdx, true, false)
-            ]
-          };
-
-          this.mode = 'lobby';
-          this.switchView('view-lobby');
-          this.renderLobbyUI();
-          showToast(`房间 ${this.roomCode} 创建成功！快发给好友吧`, 'success');
+          if (!this.netState) {
+            this.netState = {
+              roomCode: this.roomCode,
+              phase: 'lobby',
+              roundId: 0,
+              timeLeft: ROUND_DURATION,
+              orders: [],
+              players: [
+                this.makeNetPlayer(this.myId, this.profile.name, this.profile.avatarIdx, true, false)
+              ]
+            };
+            this.mode = 'lobby';
+            this.switchView('view-lobby');
+            this.renderLobbyUI();
+            this.startHeartbeatLoop();
+            this.updatePingHUD(null, 'host');
+            showToast(`房间 ${this.roomCode} 创建成功！快发给好友吧`, 'success');
+          }
         });
 
-        this.peer.on('connection', (conn) => {
-          conn.on('open', () => {
-            this.hostConns.set(conn.peer, conn);
-          });
+        peer.on('connection', (conn) => {
           conn.on('data', (msg) => this.hostHandleMessage(conn, msg));
-          conn.on('close', () => this.hostHandleDisconnect(conn.peer));
-          conn.on('error', () => this.hostHandleDisconnect(conn.peer));
+          conn.on('close', () => {
+            const cid = this.peerToClient.get(conn.peer);
+            if (cid) this.hostHandleDisconnect(cid, conn);
+          });
+          conn.on('error', () => {
+            const cid = this.peerToClient.get(conn.peer);
+            if (cid) this.hostHandleDisconnect(cid, conn);
+          });
         });
 
-        this.peer.on('error', (err) => {
+        peer.on('error', (err) => {
+          if (peer !== this.peer) return;
           console.error('Host Peer 错误:', err);
-          if (err.type === 'unavailable-id' && retryCount < 3) {
+          if (err.type === 'unavailable-id' && !this.netState && retryCount < 3) {
             this.createP2PRoom(retryCount + 1);
-          } else {
+          } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error') {
+            // 信令网络波动时不销毁房间，走指数退避重连
+            this.setConnStatus('warning', '信令重连中（对战不受影响）');
+            this.scheduleSignalReconnect(false);
+          } else if (!this.netState) {
             this.setConnStatus('error', '建房失败，请重试');
             showToast('创建房间失败，请检查网络后重试', 'danger');
             this.returnHome();
@@ -1641,6 +1974,7 @@
           avatarIdx,
           isHost,
           isBot,
+          reconnecting: false,
           score: 0,
           combo: 0,
           maxCombo: 0,
@@ -1651,41 +1985,112 @@
         };
       }
 
-      hostHandleDisconnect(peerId) {
-        this.hostConns.delete(peerId);
+      /**
+       * 房主端断线缓冲：不立刻踢人，标记「重连中」并保留分数/连击/席位 25 秒
+       */
+      hostHandleDisconnect(clientId, closedConn = null) {
         if (!this.netState) return;
-        const left = this.netState.players.find((p) => p.id === peerId);
-        if (left) {
-          this.netState.players = this.netState.players.filter((p) => p.id !== peerId);
-          showToast(`${left.name} 离开了房间`, 'warn');
-          this.hostBroadcast({ type: 'state', state: this.netState });
-          this.syncLocalViewFromNetState();
+        const entry = this.hostConns.get(clientId);
+        // 如果该玩家已经用新连接重连上来，忽略旧连接的 close 事件
+        if (entry && closedConn && entry.conn !== closedConn) return;
+
+        const player = this.netState.players.find((p) => p.id === clientId);
+        if (!player || player.reconnecting) return;
+
+        player.reconnecting = true;
+        if (entry) {
+          entry.conn = null;
+          if (entry.graceTimer) clearTimeout(entry.graceTimer);
+          entry.graceTimer = setTimeout(() => {
+            if (!this.netState) return;
+            const stillOffline = this.netState.players.find((p) => p.id === clientId && p.reconnecting);
+            if (stillOffline) {
+              this.netState.players = this.netState.players.filter((p) => p.id !== clientId);
+              this.hostConns.delete(clientId);
+              showToast(`${stillOffline.name} 重连超时，已离开房间`, 'warn');
+              this.hostBroadcast({ type: 'state', state: this.netState });
+              this.syncLocalViewFromNetState();
+            }
+          }, SEAT_GRACE_MS);
         }
+
+        showToast(`${player.name} 网络波动重连中（保留席位 25 秒）`, 'warn');
+        this.hostBroadcast({ type: 'state', state: this.netState });
+        this.syncLocalViewFromNetState();
       }
 
       hostHandleMessage(conn, msg) {
         if (!this.netState || !msg || !msg.type) return;
 
+        // 轻量级心跳响应
+        if (msg.type === 'ping') {
+          const cid = this.peerToClient.get(conn.peer);
+          if (cid && this.hostConns.has(cid)) {
+            this.hostConns.get(cid).lastSeen = Date.now();
+          }
+          try { conn.send({ type: 'pong', ts: msg.ts }); } catch (e) {}
+          return;
+        }
+        if (msg.type === 'pong') {
+          const cid = this.peerToClient.get(conn.peer);
+          if (cid && this.hostConns.has(cid)) {
+            const entry = this.hostConns.get(cid);
+            entry.lastSeen = Date.now();
+            if (typeof msg.ts === 'number') {
+              entry.rtt = Math.max(1, Date.now() - msg.ts);
+            }
+          }
+          return;
+        }
+
         if (msg.type === 'join') {
-          if (this.netState.players.length >= 4) {
-            conn.send({ type: 'reject', reason: '房间已满 4 人！' });
-            setTimeout(() => conn.close(), 300);
+          const clientId = msg.clientId || conn.peer;
+          const existing = this.netState.players.find((p) => p.id === clientId);
+
+          if (!existing && this.netState.players.length >= 4) {
+            try { conn.send({ type: 'reject', reason: '房间已满 4 人！' }); } catch (e) {}
+            setTimeout(() => { try { conn.close(); } catch (e) {} }, 300);
             return;
           }
-          const exists = this.netState.players.find((p) => p.id === conn.peer);
-          if (!exists) {
+
+          // 清除旧的保席计时器并更新连接映射
+          const prevEntry = this.hostConns.get(clientId);
+          if (prevEntry && prevEntry.graceTimer) {
+            clearTimeout(prevEntry.graceTimer);
+          }
+          this.peerToClient.set(conn.peer, clientId);
+          this.hostConns.set(clientId, {
+            conn,
+            lastSeen: Date.now(),
+            rtt: 0,
+            graceTimer: null
+          });
+
+          if (existing) {
+            existing.reconnecting = false;
+            if (msg.name) existing.name = msg.name;
+            if (typeof msg.avatarIdx === 'number') existing.avatarIdx = msg.avatarIdx;
+            showToast(`${existing.name} 重连成功，已恢复席位！`, 'success');
+          } else {
             this.netState.players.push(
-              this.makeNetPlayer(conn.peer, msg.name || '神秘小猫', msg.avatarIdx || 0, false, false)
+              this.makeNetPlayer(clientId, msg.name || '神秘小猫', msg.avatarIdx || 0, false, false)
             );
             showToast(`${msg.name || '新朋友'} 加入了房间！`, 'success');
           }
+
           this.hostBroadcast({ type: 'state', state: this.netState });
           this.syncLocalViewFromNetState();
           return;
         }
 
+        const cid = this.peerToClient.get(conn.peer);
+        if (!cid) return;
+        if (this.hostConns.has(cid)) {
+          this.hostConns.get(cid).lastSeen = Date.now();
+        }
+
         if (msg.type === 'updateProfile') {
-          const p = this.netState.players.find((x) => x.id === conn.peer);
+          const p = this.netState.players.find((x) => x.id === cid);
           if (p) {
             p.name = msg.name || p.name;
             p.avatarIdx = typeof msg.avatarIdx === 'number' ? msg.avatarIdx : p.avatarIdx;
@@ -1696,17 +2101,17 @@
         }
 
         if (msg.type === 'serve') {
-          this.hostProcessServe(conn.peer, msg.cup || []);
+          this.hostProcessServe(cid, msg.cup || []);
           return;
         }
 
         if (msg.type === 'sabotage') {
-          this.hostProcessSabotage(conn.peer);
+          this.hostProcessSabotage(cid);
           return;
         }
 
         if (msg.type === 'rematch') {
-          const p = this.netState.players.find((x) => x.id === conn.peer);
+          const p = this.netState.players.find((x) => x.id === cid);
           showToast(`${p?.name || '好友'} 想再来一局！`, 'info');
         }
       }
@@ -1734,9 +2139,9 @@
       }
 
       hostBroadcast(payload) {
-        this.hostConns.forEach((conn) => {
-          if (conn.open) {
-            try { conn.send(payload); } catch (e) {}
+        this.hostConns.forEach((entry) => {
+          if (entry.conn && entry.conn.open) {
+            try { entry.conn.send(payload); } catch (e) {}
           }
         });
       }
@@ -1935,7 +2340,7 @@
 
       /**
        * =========================================================
-       * 11. PeerJS P2P 访客逻辑（Guest 端）
+       * 11. PeerJS P2P 访客逻辑（Guest 端 + 8 次无感自动重连）
        * =========================================================
        */
       joinP2PRoom(code) {
@@ -1951,76 +2356,196 @@
         this.cleanupAll();
         this.isHost = false;
         this.roomCode = code;
+        this.guestReconnectCount = 0;
+        this.isGuestReconnecting = false;
         this.setConnStatus('connecting', `正在连接房间 ${code}...`);
+        this.connectToHostPeer(false);
+      }
 
-        this.peer = new window.Peer(PEER_CONFIG);
+      connectToHostPeer(isRetry = false) {
+        const code = this.roomCode;
+        if (!code) return;
+
+        if (this.guestConn) {
+          try { this.guestConn.close(); } catch (e) {}
+          this.guestConn = null;
+        }
+        if (this.peer) {
+          try { this.peer.destroy(); } catch (e) {}
+          this.peer = null;
+        }
+
+        const peer = new window.Peer(PEER_CONFIG);
+        this.peer = peer;
+        this.attachSignalReconnectHandlers(peer);
+
         let settled = false;
-
         const timeout = setTimeout(() => {
-          if (!settled) {
-            settled = true;
+          if (settled || peer !== this.peer) return;
+          settled = true;
+          if (isRetry || this.netState) {
+            this.scheduleNextGuestRetry();
+          } else {
             this.setConnStatus('error', '房间不存在或连接超时');
             showToast(`无法连接到房间 ${code}，请确认房主在线且房号正确`, 'danger');
             this.returnHome();
           }
-        }, 9000);
+        }, 7000);
 
-        this.peer.on('open', (id) => {
-          this.myId = id;
-          const conn = this.peer.connect(PEER_PREFIX + code, { reliable: true });
+        peer.on('open', () => {
+          if (peer !== this.peer) return;
+          this.signalRetryStep = 0;
+          const conn = peer.connect(PEER_PREFIX + code, { reliable: true });
           this.guestConn = conn;
 
           conn.on('open', () => {
+            if (conn !== this.guestConn) return;
             settled = true;
             clearTimeout(timeout);
+            this.guestLastSeen = Date.now();
+            this.isGuestReconnecting = false;
+            this.guestReconnectCount = 0;
+            this.hideReconnectingModal();
+            this.requestWakeLock();
+            this.startHeartbeatLoop();
             this.setConnStatus('connected', `已连接房间 ${code}`);
+
             conn.send({
               type: 'join',
+              clientId: this.myId,
               name: this.profile.name,
               avatarIdx: this.profile.avatarIdx
             });
+
+            if (isRetry) {
+              showToast(`已重新连回房间 ${code}！`, 'success');
+            }
           });
 
-          conn.on('data', (msg) => this.guestHandleMessage(msg));
+          conn.on('data', (msg) => {
+            if (conn !== this.guestConn) return;
+            this.guestLastSeen = Date.now();
+            this.guestHandleMessage(msg);
+          });
 
           conn.on('close', () => {
+            if (conn !== this.guestConn) return;
             if (!settled) return;
-            this.setConnStatus('error', '房主已断开连接');
-            showToast('房主已断开连接，已返回首页', 'danger');
-            this.returnHome();
+            this.startGuestAutoReconnect();
           });
 
           conn.on('error', () => {
-            settled = true;
-            clearTimeout(timeout);
-            this.setConnStatus('error', '连接中断');
-            showToast('连接房主失败', 'danger');
-            this.returnHome();
+            if (conn !== this.guestConn) return;
+            if (!settled) {
+              settled = true;
+              clearTimeout(timeout);
+            }
+            if (this.netState || isRetry) {
+              this.startGuestAutoReconnect();
+            } else {
+              this.setConnStatus('error', '连接中断');
+              showToast('连接房主失败，请重试', 'danger');
+              this.returnHome();
+            }
           });
         });
 
-        this.peer.on('error', (err) => {
-          settled = true;
-          clearTimeout(timeout);
-          if (err.type === 'peer-unavailable') {
+        peer.on('error', (err) => {
+          if (peer !== this.peer) return;
+          if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error') {
+            if (this.guestConn && this.guestConn.open) {
+              this.setConnStatus('warning', '信令重连中（对战不受影响）');
+              this.scheduleSignalReconnect(false);
+              return;
+            }
+          }
+          if (!settled) {
+            settled = true;
+            clearTimeout(timeout);
+          }
+          if (this.netState || isRetry) {
+            this.scheduleNextGuestRetry();
+          } else if (err.type === 'peer-unavailable') {
             this.setConnStatus('error', '房间不存在');
             showToast(`房间 ${code} 不存在，请核对 4 位房间号`, 'danger');
+            this.returnHome();
           } else {
             this.setConnStatus('error', '联机连接失败');
             showToast('网络环境限制了 P2P 连接，请重试或切换网络', 'danger');
+            this.returnHome();
           }
-          this.returnHome();
         });
+      }
+
+      startGuestAutoReconnect() {
+        if (this.isHost || !this.roomCode || this.isGuestReconnecting) return;
+        this.isGuestReconnecting = true;
+        this.guestReconnectCount = 0;
+        this.updatePingHUD(null, 'offline');
+        this.setConnStatus('warning', '连接波动，自动重连中...');
+        this.scheduleNextGuestRetry();
+      }
+
+      scheduleNextGuestRetry() {
+        if (!this.isGuestReconnecting || !this.roomCode) return;
+        if (this.guestReconnectTimer) {
+          clearTimeout(this.guestReconnectTimer);
+          this.guestReconnectTimer = null;
+        }
+        this.guestReconnectCount += 1;
+        if (this.guestReconnectCount > GUEST_MAX_RETRIES) {
+          showToast('多次重连失败，房主可能已关闭房间', 'danger');
+          this.returnHome();
+          return;
+        }
+        this.showReconnectingModal(this.roomCode, this.guestReconnectCount, GUEST_MAX_RETRIES);
+        this.guestReconnectTimer = setTimeout(() => {
+          this.guestReconnectTimer = null;
+          if (!this.isGuestReconnecting) return;
+          this.connectToHostPeer(true);
+        }, 2500);
+      }
+
+      showReconnectingModal(code, attempt, maxAttempts) {
+        const modal = document.getElementById('modal-reconnecting');
+        const txt = document.getElementById('reconnect-status-text');
+        if (txt) {
+          txt.textContent = `网络波动，正在自动重连房间 ${code}（第 ${attempt}/${maxAttempts} 次）...`;
+        }
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      }
+
+      hideReconnectingModal() {
+        const modal = document.getElementById('modal-reconnecting');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
       }
 
       sendToHost(payload) {
         if (this.guestConn && this.guestConn.open) {
-          this.guestConn.send(payload);
+          try { this.guestConn.send(payload); } catch (e) {}
         }
       }
 
       guestHandleMessage(msg) {
         if (!msg || !msg.type) return;
+
+        if (msg.type === 'ping') {
+          this.sendToHost({ type: 'pong', ts: msg.ts });
+          return;
+        }
+        if (msg.type === 'pong') {
+          if (typeof msg.ts === 'number') {
+            this.currentPingMs = Math.max(1, Date.now() - msg.ts);
+            this.updatePingHUD(this.currentPingMs);
+          }
+          return;
+        }
 
         if (msg.type === 'reject') {
           showToast(msg.reason || '无法加入房间', 'danger');
@@ -2180,11 +2705,11 @@
                   ${createCatSVG(p.avatarIdx, 'waiting', 'w-11 h-11')}
                   <div class="min-w-0">
                     <div class="text-xs sm:text-sm font-black text-white truncate flex items-center gap-1">
-                      ${escapeHtml(p.name)}
-                      ${p.isHost ? '<span class="text-[10px] text-amber-400">👑</span>' : ''}
+                      <span>${escapeHtml(p.name)}</span>
+                      ${p.isHost ? '<span class="text-amber-400 text-[11px]">👑</span>' : ''}
                     </div>
-                    <div class="text-[10px] ${p.isBot ? 'text-pink-300' : (isMe ? 'text-cyan-300' : 'text-emerald-400')} font-semibold">
-                      ${p.isBot ? 'AI 对手 · 自动抢单' : (isMe ? '你自己 · 已就绪' : '已入座 · P2P 直连')}
+                    <div class="text-[10px] ${p.reconnecting ? 'text-amber-300 animate-pulse' : (p.isBot ? 'text-pink-300' : (isMe ? 'text-cyan-300' : 'text-emerald-400'))} font-semibold">
+                      ${p.reconnecting ? '📡 网络波动 · 重连中...' : (p.isBot ? 'AI 对手 · 自动抢单' : (isMe ? '你自己 · 已就绪' : '已入座 · P2P 直连'))}
                     </div>
                   </div>
                 </div>
@@ -2552,11 +3077,11 @@
         bar.innerHTML = list.map((p, rank) => {
           const isMe = p.id === this.myId;
           return `
-            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border ${isMe ? 'bg-cyan-500/15 border-cyan-400/55' : 'bg-[#0b0d14]/80 border-white/10'} shrink-0">
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border ${p.reconnecting ? 'bg-amber-500/15 border-amber-400/50 opacity-80' : (isMe ? 'bg-cyan-500/15 border-cyan-400/55' : 'bg-[#0b0d14]/80 border-white/10')} shrink-0">
               <span class="text-[10px] font-black ${rank === 0 ? 'text-amber-400' : 'text-slate-400'}">#${rank + 1}</span>
               ${createCatSVG(p.avatarIdx, 'waiting', 'w-5 h-5')}
               <span class="text-[11px] font-bold text-slate-200 max-w-[64px] truncate">${escapeHtml(p.name)}</span>
-              <span class="text-xs font-black text-amber-300 tabular-nums">${p.score}</span>
+              ${p.reconnecting ? '<span class="text-[9px] font-bold text-amber-300 animate-pulse">重连中</span>' : `<span class="text-xs font-black text-amber-300 tabular-nums">${p.score}</span>`}
             </div>
           `;
         }).join('');
