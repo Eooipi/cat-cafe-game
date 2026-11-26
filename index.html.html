@@ -1,0 +1,2923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>深夜猫咖：联机抢单王</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+SC:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================
+       暗黑霓虹咖啡馆美学变量与全局样式
+       ========================================= */
+    :root {
+      --bg-main: #0b0d14;
+      --bg-card: #141926;
+      --bg-card-hover: #1b2234;
+      --neon-cyan: #22d3ee;
+      --neon-pink: #f472b6;
+      --neon-amber: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-main);
+      color: #f1f5f9;
+      font-family: 'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+    }
+
+    /* 霓虹赛博网格背景 */
+    .neon-grid-bg {
+      background-color: var(--bg-main);
+      background-image:
+        radial-gradient(circle at 12% 14%, rgba(34, 211, 238, 0.11) 0%, transparent 40%),
+        radial-gradient(circle at 86% 18%, rgba(244, 114, 182, 0.11) 0%, transparent 42%),
+        radial-gradient(circle at 50% 90%, rgba(251, 191, 36, 0.09) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 34px 34px, 34px 34px;
+    }
+
+    .glass-panel {
+      background: rgba(20, 25, 38, 0.86);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    /* =========================================
+       玻璃杯与液体分层动效
+       ========================================= */
+    .glass-cup {
+      position: relative;
+      width: 92px;
+      height: 124px;
+      border-radius: 10px 10px 22px 22px;
+      border: 2.5px solid rgba(255, 255, 255, 0.28);
+      border-top: 2px solid rgba(255, 255, 255, 0.45);
+      background: linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.015) 55%, rgba(255,255,255,0.05) 100%);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55), inset 0 0 16px rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column-reverse;
+      transition: transform 0.14s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .glass-cup-sm {
+      width: 72px;
+      height: 94px;
+      border-radius: 8px 8px 18px 18px;
+    }
+
+    @media (min-width: 640px) {
+      .glass-cup {
+        width: 108px;
+        height: 142px;
+      }
+      .glass-cup-sm {
+        width: 86px;
+        height: 112px;
+      }
+    }
+
+    .glass-cup::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 7px;
+      height: calc(100% - 20px);
+      border-radius: 99px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.02) 100%);
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .liquid-layer {
+      width: 100%;
+      height: 25%;
+      position: relative;
+      transform-origin: bottom center;
+      animation: pourIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      border-top: 1px solid rgba(255, 255, 255, 0.28);
+      overflow: hidden;
+    }
+
+    @keyframes pourIn {
+      0% { transform: scaleY(0); opacity: 0.35; }
+      72% { transform: scaleY(1.08); opacity: 1; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* 星空苏打气泡纹理 */
+    .soda-bubbles {
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.72) 1.4px, transparent 2px),
+        radial-gradient(rgba(255, 255, 255, 0.45) 1px, transparent 1.5px);
+      background-size: 14px 12px, 9px 9px;
+      background-position: 0 0, 5px 5px;
+    }
+
+    /* 迷你订单杯 */
+    .mini-cup {
+      width: 28px;
+      height: 44px;
+      border-radius: 4px 4px 9px 9px;
+      border: 1.5px solid rgba(255, 255, 255, 0.32);
+      background: rgba(11, 13, 20, 0.9);
+      display: flex;
+      flex-direction: column-reverse;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    @media (min-width: 640px) {
+      .mini-cup {
+        width: 34px;
+        height: 48px;
+      }
+    }
+
+    /* =========================================
+       动效：晃动、打翻、猫爪、漂浮得分、高亮脉冲
+       ========================================= */
+    @keyframes cupShake {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      20% { transform: translateX(-7px) rotate(-5deg); }
+      40% { transform: translateX(7px) rotate(5deg); }
+      60% { transform: translateX(-5px) rotate(-3deg); }
+      80% { transform: translateX(4px) rotate(2deg); }
+    }
+
+    .cup-shake {
+      animation: cupShake 0.34s ease-in-out;
+      border-color: #f43f5e !important;
+      box-shadow: 0 0 22px rgba(244, 63, 94, 0.55) !important;
+    }
+
+    @keyframes splashOut {
+      0% { transform: scale(1) rotate(0deg); filter: brightness(1.4); }
+      38% { transform: scale(1.14) rotate(-16deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .cup-spilled {
+      animation: splashOut 0.48s ease-out;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 28px rgba(56, 189, 248, 0.7) !important;
+    }
+
+    @keyframes orderPop {
+      0% { opacity: 0; transform: translateY(8px) scale(0.94); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .order-pop {
+      animation: orderPop 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes floatScore {
+      0% { opacity: 0; transform: translate(-50%, 6px) scale(0.85); }
+      22% { opacity: 1; transform: translate(-50%, -10px) scale(1.14); }
+      100% { opacity: 0; transform: translate(-50%, -54px) scale(0.95); }
+    }
+
+    .floating-text {
+      position: fixed;
+      pointer-events: none;
+      z-index: 90;
+      font-weight: 900;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.92);
+      animation: floatScore 0.92s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes pawSlap {
+      0% { transform: scale(2) rotate(var(--rot)); opacity: 0; }
+      35% { transform: scale(0.92) rotate(var(--rot)); opacity: 0.92; }
+      100% { transform: scale(1) rotate(var(--rot)); opacity: 0.88; }
+    }
+
+    .paw-print {
+      animation: pawSlap 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      cursor: pointer;
+      transition: transform 0.14s ease, opacity 0.18s ease;
+    }
+
+    .paw-print:hover {
+      transform: scale(1.06) rotate(var(--rot));
+    }
+
+    .paw-wiped {
+      transform: scale(0.3) rotate(var(--rot)) !important;
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 12px rgba(244, 114, 182, 0.5), inset 0 0 8px rgba(244, 114, 182, 0.25); }
+      50% { box-shadow: 0 0 26px rgba(251, 191, 36, 0.8), inset 0 0 12px rgba(251, 191, 36, 0.35); }
+    }
+
+    .sabotage-ready {
+      animation: glowPulse 1.15s ease-in-out infinite;
+    }
+
+    @keyframes joinHighlight {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7); }
+      50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0); }
+    }
+
+    .join-highlight {
+      animation: joinHighlight 1.2s ease-in-out infinite;
+      background: linear-gradient(135deg, #22d3ee, #0284c7) !important;
+      color: #0b0d14 !important;
+      border-color: #67e8f9 !important;
+    }
+
+    @keyframes heartFloat {
+      0% { transform: translateY(0) scale(0.8); opacity: 0; }
+      30% { opacity: 1; }
+      100% { transform: translateY(-16px) scale(1.15); opacity: 0; }
+    }
+
+    .cat-heart {
+      animation: heartFloat 0.9s ease-out infinite;
+    }
+
+    .btn-press {
+      transition: transform 0.08s ease, background-color 0.14s ease, border-color 0.14s ease;
+    }
+    .btn-press:active, .btn-press.key-down {
+      transform: scale(0.93) translateY(2px);
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 99px;
+    }
+  </style>
+</head>
+<body class="neon-grid-bg flex flex-col overflow-hidden">
+
+  <!-- =========================================
+       全局 Toast 提示容器（替代 alert）
+       ========================================= -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2 pointer-events-none w-[92%] max-w-sm"></div>
+
+  <!-- =========================================
+       顶部全局状态栏
+       ========================================= -->
+  <header class="w-full max-w-6xl mx-auto px-3 sm:px-5 pt-2.5 pb-1.5 flex items-center justify-between gap-2 shrink-0 z-30">
+    <!-- Logo 与 P2P 连接状态 -->
+    <button id="btn-home-logo" type="button" class="flex items-center gap-2 group text-left">
+      <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center shadow-lg group-hover:scale-105 transition">
+        <svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+          <line x1="6" x2="6" y1="2" y2="4"/>
+          <line x1="10" x2="10" y1="2" y2="4"/>
+          <line x1="14" x2="14" y1="2" y2="4"/>
+        </svg>
+      </div>
+      <div class="leading-tight">
+        <div class="text-xs sm:text-sm font-black tracking-wide text-white flex items-center gap-1.5">
+          深夜猫咖
+          <span class="px-1.5 py-0.5 text-[10px] rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-400/35 font-extrabold">P2P 联机版</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+          <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="conn-text">正在加载 WebRTC P2P 引擎...</span>
+        </div>
+      </div>
+    </button>
+
+    <!-- 右侧操作按钮 -->
+    <div class="flex items-center gap-2">
+      <button id="btn-leave-game" type="button" class="hidden px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-400/40 text-xs font-bold text-slate-300 hover:text-rose-200 transition active:scale-95">
+        退出本局
+      </button>
+      <button id="btn-mute" type="button" title="音效开关" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 transition active:scale-95">
+        <svg id="icon-sound-on" class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+        <svg id="icon-sound-off" class="w-4 h-4 sm:w-5 sm:h-5 hidden text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <line x1="23" y1="9" x2="17" y2="15"/>
+          <line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================
+       视图 1：主界面（零登录工牌 + 三大模式）
+       ========================================= -->
+  <main id="view-home" class="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-5 py-2 flex flex-col justify-center overflow-y-auto custom-scroll">
+    <div class="w-full flex flex-col gap-3 sm:gap-4 my-auto pb-4">
+
+      <!-- 零登录猫咪工牌 -->
+      <section class="glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5 w-full sm:w-auto">
+          <button id="btn-cycle-avatar" type="button" title="点击切换猫咪头像" class="relative w-16 h-16 rounded-2xl bg-[#0b0d14] border border-cyan-400/40 hover:border-cyan-300 flex items-center justify-center shrink-0 transition active:scale-95">
+            <div id="home-avatar-svg" class="w-14 h-14"></div>
+            <span class="absolute -bottom-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-cyan-400 text-slate-950 text-[9px] font-black shadow">换猫</span>
+          </button>
+          <div class="flex-1 min-w-0">
+            <div class="text-[11px] text-slate-400 font-semibold mb-1">深夜猫咖工牌（免登录 · 自动保存）</div>
+            <div class="flex items-center gap-2">
+              <input id="input-nickname" type="text" maxlength="10" class="w-full sm:w-44 bg-[#0b0d14] border border-white/15 focus:border-cyan-400 rounded-xl px-3 py-1.5 text-sm font-extrabold text-white outline-none transition" placeholder="输入猫咪昵称" />
+              <button id="btn-random-name" type="button" title="随机昵称" class="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 shrink-0 transition active:scale-95">🎲</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden sm:flex flex-col items-end text-right text-xs text-slate-400">
+          <span class="text-cyan-300 font-bold">⚡ 纯前端 WebRTC 直连 · 零服务器零登录</span>
+          <span class="mt-0.5">上传 Netlify / GitHub Pages 即可发链接秒开黑</span>
+        </div>
+      </section>
+
+      <!-- 三大模式卡片 -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+
+        <!-- 模式 1：在线联机抢单 (2-4人 P2P) -->
+        <div class="md:col-span-2 bg-gradient-to-br from-[#161e30] to-[#111624] border border-cyan-400/35 rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col justify-between gap-4 relative overflow-hidden">
+          <div class="absolute -top-12 -right-12 w-40 h-40 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none"></div>
+          <div>
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span class="px-2 py-0.5 rounded-full bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-[11px] font-black">2~4 人 P2P 联机</span>
+              <span class="px-2 py-0.5 rounded-full bg-pink-500/15 border border-pink-400/30 text-pink-300 text-[11px] font-bold">支持 AI 猫补位</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-white">在线联机抢单</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1">房主建房生成 4 位数字房号，好友输入或点链接直连抢单，还能甩猫爪道具坑榜一！</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <button id="btn-create-room" type="button" class="btn-press flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base shadow-lg shadow-amber-500/20">
+              创建房间并邀请
+            </button>
+            <div class="flex items-center gap-2 flex-1">
+              <input id="input-room-code" type="text" inputmode="numeric" maxlength="4" placeholder="4位数字房号" class="w-full bg-[#0b0d14] border border-white/15 focus:border-cyan-400 rounded-2xl px-3.5 py-3 text-center text-sm sm:text-base font-black tracking-[0.22em] text-cyan-300 outline-none" />
+              <button id="btn-join-room" type="button" class="btn-press shrink-0 py-3 px-4 rounded-2xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/45 text-cyan-200 font-black text-sm">
+                加入
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧两模式：本地双人 & 单人肉鸽 -->
+        <div class="flex flex-col gap-3">
+          <button id="btn-start-local2p" type="button" class="btn-press text-left flex-1 glass-panel hover:bg-[#1b2234] border-pink-500/35 hover:border-pink-400 rounded-3xl p-4 shadow-xl transition flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/35 text-[10px] font-black">1v1 同屏对战</span>
+                <span class="text-pink-400 font-black text-sm">→</span>
+              </div>
+              <div class="text-base sm:text-lg font-black text-white">本地同屏双人</div>
+              <p class="text-[11px] text-slate-400 mt-0.5">一台设备直接开撕！桌面键鼠分控 / 手机触控同屏</p>
+            </div>
+          </button>
+
+          <button id="btn-start-solo" type="button" class="btn-press text-left flex-1 glass-panel hover:bg-[#1b2234] border-emerald-500/35 hover:border-emerald-400 rounded-3xl p-4 shadow-xl transition flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 text-[10px] font-black">90秒 · 肉鸽强化</span>
+                <span id="home-solo-best" class="text-[11px] text-emerald-300 font-bold">最高 0</span>
+              </div>
+              <div class="text-base sm:text-lg font-black text-white">单人极速挑战</div>
+              <p class="text-[11px] text-slate-400 mt-0.5">每 5 杯三选一强力 Buff，挑战深夜手冲极限！</p>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- 底部 5 种原料图鉴速览 -->
+      <section class="glass-panel rounded-2xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
+        <span class="text-slate-400 font-bold">5 种基础原料（从下往上叠层）：</span>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#b45309]"></i>1 浓缩咖啡</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#f8fafc]"></i>2 冰鲜奶</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#4ade80]"></i>3 宇治抹茶</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#f472b6]"></i>4 草莓酱</span>
+          <span class="flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-full inline-block bg-[#38bdf8]"></i>5 星空苏打</span>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- =========================================
+       视图 2：P2P 联机房间等候大厅 (Lobby)
+       ========================================= -->
+  <section id="view-lobby" class="hidden flex-1 w-full max-w-2xl mx-auto px-3 sm:px-5 py-3 flex-col justify-center overflow-y-auto custom-scroll">
+    <div class="glass-panel rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col gap-4 my-auto">
+      <!-- 房号与双复制按钮 -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <div>
+          <div class="text-xs text-slate-400 font-semibold flex items-center gap-2">
+            <span>P2P 联机派对房间（最多 4 人）</span>
+            <span id="lobby-role-badge" class="px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 text-[10px] font-black">房主</span>
+          </div>
+          <div class="flex items-center gap-2.5 mt-1">
+            <span class="text-xs text-slate-400">房间号</span>
+            <span id="lobby-room-code" class="text-3xl sm:text-4xl font-black tracking-[0.22em] text-amber-400">----</span>
+          </div>
+        </div>
+        <div class="flex flex-col sm:items-end gap-2">
+          <div class="flex items-center gap-2">
+            <button id="btn-copy-code" type="button" class="btn-press py-2 px-3 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/45 text-amber-200 font-extrabold text-xs">
+              📋 复制 4 位房间号
+            </button>
+            <button id="btn-copy-link" type="button" class="btn-press py-2 px-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/45 text-cyan-200 font-extrabold text-xs">
+              🔗 复制邀请链接
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 沙盒/本地预览提示（仅在非 http/https 时展示） -->
+      <div id="sandbox-deploy-hint" class="hidden rounded-2xl bg-amber-500/10 border border-amber-400/30 px-3.5 py-2.5 text-[11px] text-amber-200 leading-relaxed">
+        💡 当前正在本地文件或预览沙盒中运行，直接复制的链接无法在好友设备上打开。将该 HTML 文件免费上传至 <strong>Netlify Drop</strong> 或 <strong>GitHub Pages</strong> 后，即可使用「复制邀请链接」一键拉好友开黑！
+      </div>
+
+      <!-- 玩家列表与添加 AI 对手 -->
+      <div>
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-xs font-bold text-slate-300">已入座的调饮猫 (<span id="lobby-player-count">1</span>/4)</span>
+          <button id="btn-add-bot" type="button" class="hidden btn-press px-2.5 py-1 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 border border-pink-400/40 text-pink-200 text-[11px] font-extrabold">
+            + 添加 AI 猫对手
+          </button>
+        </div>
+        <div id="lobby-players-grid" class="grid grid-cols-2 gap-2.5">
+          <!-- 动态渲染 4 个席位 -->
+        </div>
+      </div>
+
+      <!-- 大厅底部操作 -->
+      <div class="flex items-center gap-3 pt-1">
+        <button id="btn-lobby-leave" type="button" class="btn-press py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold text-sm">
+          离开房间
+        </button>
+        <button id="btn-lobby-start" type="button" class="btn-press flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-base shadow-lg shadow-amber-500/25">
+          全员开始营业！
+        </button>
+      </div>
+      <div id="lobby-wait-hint" class="hidden text-center text-xs text-cyan-300 font-semibold">
+        已连接到房主，等待房主点击开始营业...
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       视图 3：单人肉鸽 / P2P 在线联机主舞台
+       ========================================= -->
+  <section id="view-game-single" class="hidden flex-1 w-full max-w-5xl mx-auto px-2.5 sm:px-5 pb-2.5 sm:pb-4 flex-col justify-between gap-2 min-h-0 relative">
+
+    <!-- 顶部计分与倒计时条 -->
+    <div class="glass-panel rounded-2xl px-3 sm:px-4 py-2 flex items-center justify-between gap-2 shrink-0 shadow-lg">
+      <div class="flex items-center gap-2">
+        <div class="px-2.5 py-1 rounded-xl bg-[#0b0d14] border border-white/10 flex items-center gap-1.5">
+          <span class="text-xs text-slate-400">⏱️</span>
+          <span id="game-timer" class="text-base sm:text-xl font-black tabular-nums text-white">90s</span>
+        </div>
+        <div class="hidden sm:flex flex-col leading-tight">
+          <span id="game-mode-label" class="text-[11px] font-bold text-cyan-300">P2P 联机抢单</span>
+          <span id="game-room-tag" class="text-[10px] text-slate-400">房间 ----</span>
+        </div>
+      </div>
+
+      <!-- 实时玩家排行榜 / 单人增益条 -->
+      <div id="live-scoreboard" class="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto custom-scroll px-1"></div>
+
+      <!-- 连击 -->
+      <div class="text-right shrink-0">
+        <div class="text-[10px] text-slate-400 font-semibold">连击</div>
+        <div id="single-combo" class="text-sm sm:text-lg font-black text-pink-400 tabular-nums leading-none">x1.0</div>
+      </div>
+    </div>
+
+    <!-- 单人肉鸽已激活 Buff 标签行 -->
+    <div id="solo-buffs-bar" class="hidden items-center justify-center gap-1.5 flex-wrap shrink-0"></div>
+
+    <!-- 共享猫咪订单吧台 -->
+    <div class="flex-1 flex flex-col justify-center min-h-0 relative">
+      <div id="single-orders-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 items-end w-full"></div>
+      <div class="w-full h-2 rounded-full bg-gradient-to-r from-[#171e2f] via-[#2b3754] to-[#171e2f] border border-white/10 mt-1.5 relative overflow-hidden shrink-0">
+        <div class="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent"></div>
+      </div>
+    </div>
+
+    <!-- 调饮工作台 -->
+    <div class="shrink-0 glass-panel rounded-3xl p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 relative overflow-hidden">
+      <!-- 猫爪糊屏交互层（可点击擦除！） -->
+      <div id="single-paw-overlay" class="hidden absolute inset-0 z-30 overflow-hidden bg-pink-950/15 backdrop-blur-[1px]"></div>
+
+      <!-- 中央操作行 -->
+      <div class="flex items-center justify-center gap-3 sm:gap-6">
+        <!-- 左侧：道具 + 倒掉 -->
+        <div class="flex flex-col gap-2 w-24 sm:w-28">
+          <button id="single-btn-sabotage" type="button" disabled class="btn-press py-2 px-2 rounded-2xl bg-[#1a2236] border border-white/10 text-slate-500 font-extrabold text-[11px] sm:text-xs flex flex-col items-center justify-center transition">
+            <span id="single-sabotage-label">⚡ 充能 0/3</span>
+            <span class="hidden sm:inline text-[9px] opacity-75">[Q 键释放]</span>
+          </button>
+          <button id="single-btn-dump" type="button" class="btn-press py-2 px-2 rounded-2xl bg-[#1a2236] hover:bg-rose-500/20 border border-white/10 hover:border-rose-400/45 text-slate-300 hover:text-rose-200 font-bold text-xs flex items-center justify-center gap-1">
+            <span>🗑️ 倒掉</span>
+            <span class="hidden sm:inline text-[10px] text-slate-500">[C]</span>
+          </button>
+        </div>
+
+        <!-- 玻璃杯 -->
+        <div class="flex flex-col items-center">
+          <div id="single-cup" class="glass-cup"></div>
+          <div id="single-cup-text" class="mt-1 text-[11px] font-bold text-slate-400 truncate max-w-[150px]">空杯 0/4</div>
+        </div>
+
+        <!-- 出杯大按钮 -->
+        <button id="single-btn-serve" type="button" class="btn-press w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 border border-amber-200/50 text-slate-950 shadow-lg shadow-amber-500/25 flex flex-col items-center justify-center">
+          <svg class="w-7 h-7 sm:w-8 sm:h-8 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+          </svg>
+          <span class="text-sm sm:text-base font-black">抢单出杯</span>
+          <span class="hidden sm:inline text-[10px] font-bold text-amber-950/80">[Space]</span>
+        </button>
+      </div>
+
+      <!-- 5 种原料按钮 -->
+      <div id="single-ing-bar" class="grid grid-cols-5 gap-1.5 sm:gap-2.5"></div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       视图 4：本地同屏双人 1v1 竞技舞台
+       ========================================= -->
+  <section id="view-game-local2p" class="hidden flex-1 w-full max-w-6xl mx-auto px-2 sm:px-4 pb-2 flex-col justify-between gap-2 min-h-0">
+    <!-- 双人比分与倒计时 -->
+    <div class="glass-panel rounded-2xl px-3 py-1.5 flex items-center justify-between gap-2 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-black">P1</span>
+        <span id="p1-score" class="text-lg sm:text-2xl font-black text-amber-400 tabular-nums">0</span>
+        <span id="p1-combo" class="text-xs font-bold text-amber-200/80">x1.0</span>
+      </div>
+
+      <div class="px-3 py-1 rounded-xl bg-[#0b0d14] border border-white/10 text-base sm:text-xl font-black tabular-nums text-white">
+        ⏱️ <span id="local-timer">90s</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span id="p2-combo" class="text-xs font-bold text-cyan-200/80">x1.0</span>
+        <span id="p2-score" class="text-lg sm:text-2xl font-black text-cyan-400 tabular-nums">0</span>
+        <span class="px-2 py-0.5 rounded-lg bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">P2</span>
+      </div>
+    </div>
+
+    <!-- 共享订单条 -->
+    <div id="local-orders-grid" class="grid grid-cols-3 gap-2 sm:gap-3 shrink-0"></div>
+
+    <!-- 双人分屏工作台 -->
+    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 min-h-0">
+      <!-- P1 -->
+      <div class="relative glass-panel border-amber-400/35 rounded-3xl p-2.5 sm:p-3.5 flex flex-col justify-between gap-2 overflow-hidden">
+        <div id="p1-paw-overlay" class="hidden absolute inset-0 z-30 overflow-hidden bg-pink-950/15"></div>
+        <div class="text-[11px] font-black text-amber-300 flex items-center justify-between">
+          <span>🐱 玩家 1 <span class="hidden md:inline text-slate-400 font-normal">(1-5 原料 · Space 出杯 · C 倒掉 · Q 互坑)</span></span>
+        </div>
+        <div class="flex items-center justify-center gap-3 sm:gap-5">
+          <div class="flex flex-col gap-1.5 w-20 sm:w-24">
+            <button id="p1-btn-sabotage" type="button" disabled class="btn-press py-1.5 px-1.5 rounded-xl bg-[#1a2236] border border-white/10 text-slate-500 font-extrabold text-[10px]">⚡ 0/3</button>
+            <button id="p1-btn-dump" type="button" class="btn-press py-1.5 px-1.5 rounded-xl bg-[#1a2236] hover:bg-rose-500/20 border border-white/10 text-slate-300 font-bold text-[11px]">🗑️ 倒掉</button>
+          </div>
+          <div id="p1-cup" class="glass-cup glass-cup-sm"></div>
+          <button id="p1-btn-serve" type="button" class="btn-press w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg flex flex-col items-center justify-center">
+            <span>出杯</span>
+            <span class="hidden md:inline text-[10px] opacity-80">[Space]</span>
+          </button>
+        </div>
+        <div id="p1-ing-bar" class="grid grid-cols-5 gap-1 sm:gap-1.5"></div>
+      </div>
+
+      <!-- P2 -->
+      <div class="relative glass-panel border-cyan-400/35 rounded-3xl p-2.5 sm:p-3.5 flex flex-col justify-between gap-2 overflow-hidden">
+        <div id="p2-paw-overlay" class="hidden absolute inset-0 z-30 overflow-hidden bg-pink-950/15"></div>
+        <div class="text-[11px] font-black text-cyan-300 flex items-center justify-between">
+          <span>🐱 玩家 2 <span class="hidden md:inline text-slate-400 font-normal">(U/I/O/P/L 或 6-0 · Enter 出杯 · Back 倒掉 · H 互坑)</span></span>
+        </div>
+        <div class="flex items-center justify-center gap-3 sm:gap-5">
+          <div class="flex flex-col gap-1.5 w-20 sm:w-24">
+            <button id="p2-btn-sabotage" type="button" disabled class="btn-press py-1.5 px-1.5 rounded-xl bg-[#1a2236] border border-white/10 text-slate-500 font-extrabold text-[10px]">⚡ 0/3</button>
+            <button id="p2-btn-dump" type="button" class="btn-press py-1.5 px-1.5 rounded-xl bg-[#1a2236] hover:bg-rose-500/20 border border-white/10 text-slate-300 font-bold text-[11px]">🗑️ 倒掉</button>
+          </div>
+          <div id="p2-cup" class="glass-cup glass-cup-sm"></div>
+          <button id="p2-btn-serve" type="button" class="btn-press w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-slate-950 font-black text-xs sm:text-sm shadow-lg flex flex-col items-center justify-center">
+            <span>出杯</span>
+            <span class="hidden md:inline text-[10px] opacity-80">[Enter]</span>
+          </button>
+        </div>
+        <div id="p2-ing-bar" class="grid grid-cols-5 gap-1 sm:gap-1.5"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       弹窗 1：单人肉鸽强化三选一
+       ========================================= -->
+  <div id="modal-upgrade" class="fixed inset-0 z-50 bg-[#0b0d14]/88 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="w-full max-w-xl glass-panel border-emerald-400/40 rounded-3xl p-5 sm:p-6 shadow-2xl text-center">
+      <div class="inline-block px-3 py-1 rounded-full bg-emerald-400/15 border border-emerald-400/40 text-emerald-300 text-xs font-black mb-2">
+        ⚡ 营业暂停 · 店长特调强化
+      </div>
+      <h3 class="text-xl sm:text-2xl font-black text-white mb-1">选择一项肉鸽 Buff</h3>
+      <p class="text-xs text-slate-400 mb-4">每成功出杯 5 次即可强化一次，效果在本局内持续生效</p>
+      <div id="upgrade-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-left"></div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       弹窗 2：回合结算颁奖台 (Podium)
+       ========================================= -->
+  <div id="modal-podium" class="fixed inset-0 z-50 bg-[#0b0d14]/90 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="w-full max-w-lg glass-panel border-amber-400/40 rounded-3xl p-5 sm:p-7 shadow-2xl max-h-[92dvh] overflow-y-auto custom-scroll text-center">
+      <div class="inline-block px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 text-xs font-black mb-2">
+        90 秒营业结算 · 颁奖台
+      </div>
+      <h2 id="podium-title" class="text-2xl sm:text-3xl font-black text-white mb-1">今晚的抢单王诞生！</h2>
+      <p id="podium-subtitle" class="text-xs text-slate-400 mb-5">全员辛苦啦，猫咪们喝得很满足</p>
+
+      <div id="podium-list" class="flex flex-col gap-2.5 mb-6 text-left"></div>
+
+      <div class="flex items-center gap-3">
+        <button id="btn-podium-home" type="button" class="btn-press py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold text-sm">
+          返回首页
+        </button>
+        <button id="btn-podium-rematch" type="button" class="btn-press flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-base shadow-lg shadow-amber-500/25">
+          再来一局！
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       核心脚本：双 CDN PeerJS 加载 + 完整 P2P/双人/肉鸽引擎
+       ========================================= -->
+  <script>
+    /**
+     * =========================================================
+     * 1. PeerJS 双 CDN 容灾加载器
+     * =========================================================
+     */
+    const PEERJS_CDNS = [
+      'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
+      'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'
+    ];
+
+    const PEER_CONFIG = {
+      debug: 1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun.cloudflare.com:3478' }
+        ]
+      }
+    };
+
+    const PEER_PREFIX = 'mcc-p2p-v1-';
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => {
+          s.remove();
+          reject(new Error('Failed to load ' + src));
+        };
+        document.head.appendChild(s);
+      });
+    }
+
+    async function ensurePeerJSLoaded() {
+      if (typeof window.Peer !== 'undefined') return true;
+      for (const url of PEERJS_CDNS) {
+        try {
+          await loadScript(url);
+          if (typeof window.Peer !== 'undefined') return true;
+        } catch (err) {
+          console.warn('PeerJS CDN 切换中:', err.message);
+        }
+      }
+      return false;
+    }
+
+    /**
+     * =========================================================
+     * 2. 游戏常量配置：5 种原料、4 种猫咪、互坑道具、肉鸽强化
+     * =========================================================
+     */
+    const ROUND_DURATION = 90;
+
+    const INGREDIENTS = [
+      {
+        id: 'espresso',
+        name: '浓缩咖啡',
+        short: '浓缩',
+        icon: '☕',
+        p1Key: '1',
+        p2Key: 'U',
+        color: '#b45309',
+        gradient: 'linear-gradient(180deg, #d97706 0%, #92400e 100%)',
+        border: 'border-amber-600/50 hover:bg-amber-600/20',
+        text: 'text-amber-300',
+        extraClass: ''
+      },
+      {
+        id: 'milk',
+        name: '冰鲜奶',
+        short: '冰鲜奶',
+        icon: '🥛',
+        p1Key: '2',
+        p2Key: 'I',
+        color: '#f8fafc',
+        gradient: 'linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%)',
+        border: 'border-slate-200/45 hover:bg-slate-200/15',
+        text: 'text-slate-100',
+        extraClass: ''
+      },
+      {
+        id: 'matcha',
+        name: '宇治抹茶',
+        short: '抹茶',
+        icon: '🍵',
+        p1Key: '3',
+        p2Key: 'O',
+        color: '#4ade80',
+        gradient: 'linear-gradient(180deg, #4ade80 0%, #16a34a 100%)',
+        border: 'border-emerald-400/45 hover:bg-emerald-400/20',
+        text: 'text-emerald-300',
+        extraClass: ''
+      },
+      {
+        id: 'strawberry',
+        name: '草莓酱',
+        short: '草莓酱',
+        icon: '🍓',
+        p1Key: '4',
+        p2Key: 'P',
+        color: '#f472b6',
+        gradient: 'linear-gradient(180deg, #f472b6 0%, #db2777 100%)',
+        border: 'border-pink-400/45 hover:bg-pink-400/20',
+        text: 'text-pink-300',
+        extraClass: ''
+      },
+      {
+        id: 'soda',
+        name: '星空苏打',
+        short: '苏打',
+        icon: '✨',
+        p1Key: '5',
+        p2Key: 'L',
+        color: '#38bdf8',
+        gradient: 'linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)',
+        border: 'border-sky-400/45 hover:bg-sky-400/20',
+        text: 'text-sky-300',
+        extraClass: 'soda-bubbles'
+      }
+    ];
+
+    const ING_MAP = Object.fromEntries(INGREDIENTS.map((item) => [item.id, item]));
+
+    const CAT_BREEDS = [
+      { id: 'british', name: '蓝白英短', body: '#64748b', earInner: '#cbd5e1', muzzle: '#f8fafc', accent: '#22d3ee', patch: null },
+      { id: 'golden', name: '金渐层', body: '#f59e0b', earInner: '#fde68a', muzzle: '#fef3c7', accent: '#f472b6', patch: null },
+      { id: 'tuxedo', name: '奶牛猫', body: '#1e293b', earInner: '#f472b6', muzzle: '#f8fafc', accent: '#4ade80', patch: null },
+      { id: 'calico', name: '三花猫', body: '#f8fafc', earInner: '#fda4af', muzzle: '#ffffff', accent: '#fbbf24', patch: 'calico' }
+    ];
+
+    const RANDOM_CAT_NAMES = [
+      '拿铁蓝白', '暴躁金渐层', '熬夜三花', '手冲奶牛',
+      '摸鱼橘猫', '冰美式缅因', '干饭布偶', '加薪美短',
+      '微醺暹罗', '早八无毛猫', '夜宵加菲', '丝绒银渐层'
+    ];
+
+    const BOT_NAMES = ['AI·机械蓝白', 'AI·量子金渐层', 'AI·赛博三花', 'AI·极速奶牛'];
+
+    const SABOTAGES = {
+      paw: { id: 'paw', name: '猫爪糊屏', icon: '🐾', desc: '拍 3 个猫爪糊屏 3.5 秒（可点击擦除）' },
+      spill: { id: 'spill', name: '手滑倒杯', icon: '💦', desc: '瞬间清空对手当前杯子' },
+      blind: { id: 'blind', name: '加急盲单', icon: '❓', desc: '隐藏对手订单原料文字 3.5 秒' }
+    };
+    const SABOTAGE_KEYS = Object.keys(SABOTAGES);
+
+    const ROGUELIKE_UPGRADES = [
+      { id: 'catnip', icon: '🌿', name: '猫薄荷香薰', desc: '顾客耐心消耗减慢 25%（可叠加）' },
+      { id: 'doubleTip', icon: '💰', name: '双倍小费', desc: '每杯出杯积分额外 +50%（可叠加）' },
+      { id: 'filter', icon: '🛡️', name: '防呆滤网', desc: '配方出错不中断连击并自动清空' },
+      { id: 'autoServe', icon: '⚡', name: '极速手冲', desc: '杯中原料完全匹配订单时自动出杯' },
+      { id: 'extraTime', icon: '⏳', name: '续杯时间', desc: '立刻延长 +12 秒营业时间' }
+    ];
+
+    /**
+     * =========================================================
+     * 3. Web Audio API 零依赖合成音效引擎
+     * =========================================================
+     */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) this.ctx = new AC();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playPour(layerIdx) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freqs = [330, 415.3, 493.88, 622.25];
+        const f = freqs[Math.min(layerIdx, freqs.length - 1)];
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f * 0.85, now);
+        osc.frequency.exponentialRampToValueAtTime(f * 1.15, now + 0.08);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.16, now + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+
+      playServe(combo = 1) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const boost = Math.min(combo * 22, 220);
+        const notes = combo >= 3 ? [659.25 + boost, 987.77 + boost, 1318.5 + boost] : [587.33 + boost, 880 + boost];
+        notes.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = idx === 0 ? 'triangle' : 'sine';
+          const t = now + idx * 0.04;
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(0.15 / (idx + 1), t + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.3);
+        });
+      }
+
+      playDump() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(250, now);
+        osc.frequency.exponentialRampToValueAtTime(95, now + 0.13);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+
+      playError() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [170, 130].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          const t = now + i * 0.08;
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.07, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.12);
+        });
+      }
+
+      playSabotage() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.09);
+        osc.frequency.exponentialRampToValueAtTime(380, now + 0.28);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.32);
+      }
+
+      playTick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(920, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
+
+      playVictory() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          const t = now + idx * 0.08;
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(0.16, t + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.48);
+        });
+      }
+    }
+
+    /**
+     * =========================================================
+     * 4. 动态 SVG 猫咪与猫爪生成器（支持 waiting / urgent / served 表情）
+     * =========================================================
+     */
+    function createCatSVG(breedIdx = 0, mood = 'waiting', sizeClass = 'w-14 h-14') {
+      const b = CAT_BREEDS[breedIdx % CAT_BREEDS.length];
+      const patch = b.patch === 'calico'
+        ? `<path d="M22,42 Q38,30 46,48 Q32,56 22,52 Z" fill="#f59e0b" opacity="0.92"/>
+           <path d="M98,42 Q82,30 74,48 Q88,56 98,52 Z" fill="#1e293b" opacity="0.9"/>`
+        : '';
+
+      let eyes = '';
+      let extra = '';
+      if (mood === 'served' || mood === 'happy') {
+        eyes = `
+          <path d="M36 56 Q44 46 52 56" fill="none" stroke="#0f172a" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M68 56 Q76 46 84 56" fill="none" stroke="#0f172a" stroke-width="3.6" stroke-linecap="round"/>
+        `;
+        extra = `
+          <text x="92" y="28" font-size="18" class="cat-heart">💖</text>
+        `;
+      } else if (mood === 'urgent') {
+        eyes = `
+          <circle cx="44" cy="55" r="7.2" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+          <circle cx="44" cy="55" r="3" fill="#0f172a"/>
+          <circle cx="76" cy="55" r="7.2" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+          <circle cx="76" cy="55" r="3" fill="#0f172a"/>
+        `;
+        extra = `
+          <path d="M94,30 Q99,39 94,44 Q89,39 94,30 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="1"/>
+        `;
+      } else {
+        eyes = `
+          <circle cx="44" cy="56" r="5.2" fill="#0f172a"/>
+          <circle cx="45.8" cy="54" r="2" fill="#ffffff"/>
+          <circle cx="76" cy="56" r="5.2" fill="#0f172a"/>
+          <circle cx="77.8" cy="54" r="2" fill="#ffffff"/>
+        `;
+      }
+
+      const mouth = mood === 'urgent'
+        ? `<circle cx="60" cy="73" r="3.4" fill="#f43f5e"/>`
+        : `<path d="M53 71 Q56.5 75 60 71 Q63.5 75 67 71" fill="none" stroke="#0f172a" stroke-width="2.3" stroke-linecap="round"/>`;
+
+      return `
+        <svg viewBox="0 0 120 105" class="${sizeClass} shrink-0 drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]">
+          <polygon points="22,48 30,14 53,34" fill="${b.body}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+          <polygon points="28,42 33,22 46,34" fill="${b.earInner}"/>
+          <polygon points="98,48 90,14 67,34" fill="${b.body}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+          <polygon points="92,42 87,22 74,34" fill="${b.earInner}"/>
+          <rect x="20" y="32" width="80" height="62" rx="31" fill="${b.body}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+          ${patch}
+          <ellipse cx="60" cy="72" rx="26" ry="18" fill="${b.muzzle}"/>
+          ${eyes}
+          <polygon points="56,64 64,64 60,68.5" fill="#f472b6"/>
+          ${mouth}
+          <path d="M38 91 Q60 98 82 91" fill="none" stroke="${b.accent}" stroke-width="4.5" stroke-linecap="round"/>
+          ${extra}
+        </svg>
+      `;
+    }
+
+    function createPawSVG() {
+      return `
+        <svg viewBox="0 0 100 100" class="w-24 h-24 sm:w-32 sm:h-32 drop-shadow-[0_0_16px_rgba(244,114,182,0.75)]">
+          <ellipse cx="50" cy="64" rx="22" ry="17" fill="#f472b6" fill-opacity="0.88" stroke="#fbcfe8" stroke-width="3"/>
+          <ellipse cx="24" cy="40" rx="9" ry="12" transform="rotate(-18 24 40)" fill="#f472b6" fill-opacity="0.9" stroke="#fbcfe8" stroke-width="2.5"/>
+          <ellipse cx="42" cy="28" rx="9" ry="12" transform="rotate(-5 42 28)" fill="#f472b6" fill-opacity="0.9" stroke="#fbcfe8" stroke-width="2.5"/>
+          <ellipse cx="60" cy="28" rx="9" ry="12" transform="rotate(6 60 28)" fill="#f472b6" fill-opacity="0.9" stroke="#fbcfe8" stroke-width="2.5"/>
+          <ellipse cx="77" cy="41" rx="9" ry="12" transform="rotate(20 77 41)" fill="#f472b6" fill-opacity="0.9" stroke="#fbcfe8" stroke-width="2.5"/>
+        </svg>
+      `;
+    }
+
+    /**
+     * =========================================================
+     * 5. 通用工具函数
+     * =========================================================
+     */
+    function randomOrder(minLayers = 2, maxLayers = 4) {
+      const count = minLayers + Math.floor(Math.random() * (maxLayers - minLayers + 1));
+      const layers = [];
+      for (let i = 0; i < count; i++) {
+        layers.push(INGREDIENTS[Math.floor(Math.random() * INGREDIENTS.length)].id);
+      }
+      return {
+        id: 'ord_' + Math.random().toString(36).slice(2, 9),
+        breedIdx: Math.floor(Math.random() * CAT_BREEDS.length),
+        layers,
+        patience: 100,
+        mood: 'waiting'
+      };
+    }
+
+    function generateNumericRoomCode() {
+      return String(Math.floor(1000 + Math.random() * 9000));
+    }
+
+    function isStandardWebUrl() {
+      const p = window.location.protocol;
+      return (p === 'http:' || p === 'https:') && !window.location.href.startsWith('blob:') && window.location.origin !== 'null';
+    }
+
+    function buildShareableInviteUrl(roomCode) {
+      if (!isStandardWebUrl()) return null;
+      return `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+    }
+
+    function copyTextToClipboard(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, 99999);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const colors = {
+        info: 'bg-[#141c2e]/95 border-cyan-400/45 text-cyan-100',
+        success: 'bg-[#112620]/95 border-emerald-400/50 text-emerald-100',
+        warn: 'bg-[#2a1f13]/95 border-amber-400/50 text-amber-100',
+        danger: 'bg-[#2c131d]/95 border-rose-500/50 text-rose-100'
+      };
+      const el = document.createElement('div');
+      el.className = `px-4 py-2 rounded-2xl border shadow-xl text-xs sm:text-sm font-bold backdrop-blur-md transition-all duration-300 ${colors[type] || colors.info}`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-8px)';
+        setTimeout(() => el.remove(), 280);
+      }, 2600);
+    }
+
+    function spawnFloatingText(anchorEl, text, color = '#fbbf24') {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const el = document.createElement('div');
+      el.className = 'floating-text text-sm sm:text-base whitespace-nowrap';
+      el.style.left = `${rect.left + rect.width / 2}px`;
+      el.style.top = `${rect.top + rect.height * 0.3}px`;
+      el.style.color = color;
+      el.textContent = text;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 940);
+    }
+
+    function isExactMatch(cup, orderLayers) {
+      if (cup.length !== orderLayers.length) return false;
+      for (let i = 0; i < cup.length; i++) {
+        if (cup[i] !== orderLayers[i]) return false;
+      }
+      return true;
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    /**
+     * =========================================================
+     * 6. 主应用控制器：PeerJS P2P 星型联机 + 双人同屏 + 单人肉鸽
+     * =========================================================
+     */
+    class MidnightCatCafeP2P {
+      constructor() {
+        this.sound = new SoundEngine();
+
+        // 本地持久化身份
+        this.profile = this.loadProfile();
+        this.myId = 'cat_' + Math.random().toString(36).slice(2, 10);
+
+        // P2P 状态
+        this.peerLibReady = false;
+        this.peer = null;
+        this.isHost = false;
+        this.roomCode = null;
+        this.hostConns = new Map(); // Host 专用: peerId -> DataConnection
+        this.guestConn = null;      // Guest 专用: DataConnection to Host
+        this.hostTickTimer = null;
+        this.botTimers = new Map();
+
+        // 权威房间状态（Host 维护并广播，Guest 镜像接收）
+        this.netState = null;
+
+        // 当前模式：'home' | 'lobby' | 'online' | 'local2p' | 'solo'
+        this.mode = 'home';
+
+        // 单人 / 在线本地操作台状态
+        this.singleCup = [];
+        this.singleBlindUntil = 0;
+
+        // 单人肉鸽专属状态
+        this.soloState = null;
+        this.soloTimer = null;
+        this.soloPaused = false;
+
+        // 本地双人状态
+        this.localTimer = null;
+        this.localTimeLeft = ROUND_DURATION;
+        this.localOrders = [];
+        this.localPlayers = null;
+
+        this.buildIngredientButtons();
+        this.renderProfileUI();
+        this.bindEvents();
+        this.bootstrapPeerJS();
+        this.checkIncomingRoomParam();
+      }
+
+      loadProfile() {
+        try {
+          const raw = localStorage.getItem('mcc_p2p_profile_v1');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            return {
+              name: parsed.name || RANDOM_CAT_NAMES[0],
+              avatarIdx: typeof parsed.avatarIdx === 'number' ? parsed.avatarIdx : 0,
+              soloBest: typeof parsed.soloBest === 'number' ? parsed.soloBest : 0
+            };
+          }
+        } catch (e) {}
+        return {
+          name: RANDOM_CAT_NAMES[Math.floor(Math.random() * RANDOM_CAT_NAMES.length)],
+          avatarIdx: Math.floor(Math.random() * CAT_BREEDS.length),
+          soloBest: 0
+        };
+      }
+
+      saveProfile() {
+        try {
+          localStorage.setItem('mcc_p2p_profile_v1', JSON.stringify(this.profile));
+        } catch (e) {}
+      }
+
+      async bootstrapPeerJS() {
+        this.setConnStatus('loading', '正在加载 WebRTC P2P 引擎...');
+        const ok = await ensurePeerJSLoaded();
+        this.peerLibReady = ok;
+        if (ok) {
+          this.setConnStatus('ready', 'P2P 联机就绪 · 免登录直连');
+        } else {
+          this.setConnStatus('error', 'P2P 引擎加载失败（可使用本地/单人模式）');
+        }
+      }
+
+      setConnStatus(state, text) {
+        const dot = document.getElementById('conn-dot');
+        const txt = document.getElementById('conn-text');
+        const map = {
+          loading: 'bg-amber-400 animate-pulse',
+          ready: 'bg-emerald-400',
+          connecting: 'bg-cyan-400 animate-pulse',
+          connected: 'bg-cyan-400',
+          error: 'bg-rose-500'
+        };
+        dot.className = `w-1.5 h-1.5 rounded-full ${map[state] || 'bg-slate-400'}`;
+        txt.textContent = text;
+      }
+
+      /**
+       * 读取 ?room=XXXX 或 #room=XXXX，自动填入并高亮加入按钮
+       */
+      checkIncomingRoomParam() {
+        const params = new URLSearchParams(window.location.search);
+        let code = params.get('room');
+        if (!code && window.location.hash) {
+          const m = window.location.hash.match(/room=([0-9]{4})/);
+          if (m) code = m[1];
+        }
+        if (code && /^[0-9]{4}$/.test(code)) {
+          const input = document.getElementById('input-room-code');
+          const joinBtn = document.getElementById('btn-join-room');
+          input.value = code;
+          joinBtn.classList.add('join-highlight');
+          showToast(`已填入邀请房间号 ${code}，点击「加入」立即进入！`, 'info');
+        }
+      }
+
+      /**
+       * =========================================================
+       * 7. 界面切换与静态组件构建
+       * =========================================================
+       */
+      switchView(viewId) {
+        ['view-home', 'view-lobby', 'view-game-single', 'view-game-local2p'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (id === viewId) {
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+          } else {
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+          }
+        });
+        const leaveBtn = document.getElementById('btn-leave-game');
+        leaveBtn.classList.toggle('hidden', !(viewId === 'view-game-single' || viewId === 'view-game-local2p'));
+      }
+
+      renderProfileUI() {
+        document.getElementById('home-avatar-svg').innerHTML = createCatSVG(this.profile.avatarIdx, 'waiting', 'w-14 h-14');
+        document.getElementById('input-nickname').value = this.profile.name;
+        document.getElementById('home-solo-best').textContent = `最高 ${this.profile.soloBest}`;
+      }
+
+      buildIngredientButtons() {
+        const singleBar = document.getElementById('single-ing-bar');
+        singleBar.innerHTML = INGREDIENTS.map((ing) => `
+          <button type="button" data-single-ing="${ing.id}" class="btn-press relative flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-2xl bg-[#1a2236] border ${ing.border} shadow-md">
+            <span class="hidden sm:block absolute top-1 left-2 text-[10px] font-black opacity-65 ${ing.text}">${ing.p1Key}</span>
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full mb-1 border border-white/30 flex items-center justify-center text-[11px] ${ing.extraClass}" style="background:${ing.gradient}"></span>
+            <span class="text-[11px] sm:text-xs font-extrabold ${ing.text} truncate">${ing.short}</span>
+          </button>
+        `).join('');
+
+        const p1Bar = document.getElementById('p1-ing-bar');
+        p1Bar.innerHTML = INGREDIENTS.map((ing) => `
+          <button type="button" data-p1-ing="${ing.id}" class="btn-press relative flex flex-col items-center justify-center py-2 px-0.5 rounded-xl bg-[#1a2236] border ${ing.border}">
+            <span class="hidden md:block absolute top-0.5 left-1.5 text-[9px] font-black opacity-60 ${ing.text}">${ing.p1Key}</span>
+            <span class="w-5 h-5 rounded-full mb-0.5 border border-white/30 ${ing.extraClass}" style="background:${ing.gradient}"></span>
+            <span class="text-[10px] font-extrabold ${ing.text} truncate">${ing.short}</span>
+          </button>
+        `).join('');
+
+        const p2Bar = document.getElementById('p2-ing-bar');
+        p2Bar.innerHTML = INGREDIENTS.map((ing) => `
+          <button type="button" data-p2-ing="${ing.id}" class="btn-press relative flex flex-col items-center justify-center py-2 px-0.5 rounded-xl bg-[#1a2236] border ${ing.border}">
+            <span class="hidden md:block absolute top-0.5 left-1.5 text-[9px] font-black opacity-60 ${ing.text}">${ing.p2Key}</span>
+            <span class="w-5 h-5 rounded-full mb-0.5 border border-white/30 ${ing.extraClass}" style="background:${ing.gradient}"></span>
+            <span class="text-[10px] font-extrabold ${ing.text} truncate">${ing.short}</span>
+          </button>
+        `).join('');
+      }
+
+      /**
+       * =========================================================
+       * 8. 事件绑定
+       * =========================================================
+       */
+      bindEvents() {
+        document.getElementById('btn-cycle-avatar').addEventListener('click', () => {
+          this.sound.init();
+          this.profile.avatarIdx = (this.profile.avatarIdx + 1) % CAT_BREEDS.length;
+          this.saveProfile();
+          this.renderProfileUI();
+          this.sound.playPour(this.profile.avatarIdx);
+        });
+
+        document.getElementById('input-nickname').addEventListener('input', (e) => {
+          this.profile.name = e.target.value.trim() || '神秘小猫';
+          this.saveProfile();
+        });
+
+        document.getElementById('btn-random-name').addEventListener('click', () => {
+          this.sound.init();
+          this.profile.name = RANDOM_CAT_NAMES[Math.floor(Math.random() * RANDOM_CAT_NAMES.length)];
+          this.saveProfile();
+          this.renderProfileUI();
+          this.sound.playPour(2);
+        });
+
+        document.getElementById('btn-home-logo').addEventListener('click', () => this.returnHome());
+        document.getElementById('btn-leave-game').addEventListener('click', () => this.returnHome());
+        document.getElementById('btn-mute').addEventListener('click', () => {
+          const muted = this.sound.toggleMute();
+          document.getElementById('icon-sound-on').classList.toggle('hidden', muted);
+          document.getElementById('icon-sound-off').classList.toggle('hidden', !muted);
+        });
+
+        // 首页按钮
+        document.getElementById('btn-create-room').addEventListener('click', () => {
+          this.sound.init();
+          this.createP2PRoom();
+        });
+        document.getElementById('btn-join-room').addEventListener('click', () => {
+          this.sound.init();
+          document.getElementById('btn-join-room').classList.remove('join-highlight');
+          const code = document.getElementById('input-room-code').value.trim();
+          this.joinP2PRoom(code);
+        });
+        document.getElementById('btn-start-local2p').addEventListener('click', () => {
+          this.sound.init();
+          this.startLocal2P();
+        });
+        document.getElementById('btn-start-solo').addEventListener('click', () => {
+          this.sound.init();
+          this.startSolo();
+        });
+
+        // 大厅按钮
+        document.getElementById('btn-copy-code').addEventListener('click', () => this.copyRoomCodeOnly());
+        document.getElementById('btn-copy-link').addEventListener('click', () => this.copyInviteLink());
+        document.getElementById('btn-add-bot').addEventListener('click', () => this.hostAddBot());
+        document.getElementById('btn-lobby-leave').addEventListener('click', () => this.returnHome());
+        document.getElementById('btn-lobby-start').addEventListener('click', () => this.hostStartMatch());
+
+        // 颁奖台按钮
+        document.getElementById('btn-podium-home').addEventListener('click', () => {
+          this.hidePodium();
+          this.returnHome();
+        });
+        document.getElementById('btn-podium-rematch').addEventListener('click', () => {
+          this.sound.init();
+          this.hidePodium();
+          if (this.mode === 'online') {
+            if (this.isHost) {
+              this.hostStartMatch();
+            } else {
+              this.sendToHost({ type: 'rematch' });
+              showToast('已提醒房主再来一局！', 'info');
+            }
+          } else if (this.mode === 'local2p') {
+            this.startLocal2P();
+          } else {
+            this.startSolo();
+          }
+        });
+
+        // 单人/联机操作按钮
+        document.querySelectorAll('[data-single-ing]').forEach((btn) => {
+          btn.addEventListener('click', () => this.handleSingleAdd(btn.dataset.singleIng));
+        });
+        document.getElementById('single-btn-dump').addEventListener('click', () => this.handleSingleDump(true));
+        document.getElementById('single-btn-serve').addEventListener('click', () => this.handleSingleServe());
+        document.getElementById('single-btn-sabotage').addEventListener('click', () => this.handleSingleSabotage());
+
+        // 本地双人操作按钮
+        document.querySelectorAll('[data-p1-ing]').forEach((btn) => {
+          btn.addEventListener('click', () => this.handleLocalAdd('p1', btn.dataset.p1Ing));
+        });
+        document.querySelectorAll('[data-p2-ing]').forEach((btn) => {
+          btn.addEventListener('click', () => this.handleLocalAdd('p2', btn.dataset.p2Ing));
+        });
+        document.getElementById('p1-btn-dump').addEventListener('click', () => this.handleLocalDump('p1', true));
+        document.getElementById('p2-btn-dump').addEventListener('click', () => this.handleLocalDump('p2', true));
+        document.getElementById('p1-btn-serve').addEventListener('click', () => this.handleLocalServe('p1'));
+        document.getElementById('p2-btn-serve').addEventListener('click', () => this.handleLocalServe('p2'));
+        document.getElementById('p1-btn-sabotage').addEventListener('click', () => this.handleLocalSabotage('p1'));
+        document.getElementById('p2-btn-sabotage').addEventListener('click', () => this.handleLocalSabotage('p2'));
+
+        // 键盘快捷键
+        window.addEventListener('keydown', (e) => {
+          if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+          if (e.repeat) return;
+          const key = e.key.toLowerCase();
+
+          if (this.mode === 'solo' || this.mode === 'online') {
+            if (this.soloPaused) return;
+            if (['1', '2', '3', '4', '5'].includes(key)) {
+              const ing = INGREDIENTS[parseInt(key, 10) - 1].id;
+              this.flashBtn(`[data-single-ing="${ing}"]`);
+              this.handleSingleAdd(ing);
+            } else if (e.code === 'Space' || e.key === 'Enter') {
+              e.preventDefault();
+              this.flashBtn('#single-btn-serve');
+              this.handleSingleServe();
+            } else if (key === 'c' || e.key === 'Backspace') {
+              e.preventDefault();
+              this.flashBtn('#single-btn-dump');
+              this.handleSingleDump(true);
+            } else if (key === 'q') {
+              this.flashBtn('#single-btn-sabotage');
+              this.handleSingleSabotage();
+            }
+            return;
+          }
+
+          if (this.mode === 'local2p') {
+            if (['1', '2', '3', '4', '5'].includes(key)) {
+              const ing = INGREDIENTS[parseInt(key, 10) - 1].id;
+              this.flashBtn(`[data-p1-ing="${ing}"]`);
+              this.handleLocalAdd('p1', ing);
+            } else if (e.code === 'Space') {
+              e.preventDefault();
+              this.flashBtn('#p1-btn-serve');
+              this.handleLocalServe('p1');
+            } else if (key === 'c') {
+              this.flashBtn('#p1-btn-dump');
+              this.handleLocalDump('p1', true);
+            } else if (key === 'q') {
+              this.flashBtn('#p1-btn-sabotage');
+              this.handleLocalSabotage('p1');
+            }
+
+            const p2Map = { u: 0, i: 1, o: 2, p: 3, l: 4, '6': 0, '7': 1, '8': 2, '9': 3, '0': 4 };
+            if (key in p2Map) {
+              const ing = INGREDIENTS[p2Map[key]].id;
+              this.flashBtn(`[data-p2-ing="${ing}"]`);
+              this.handleLocalAdd('p2', ing);
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              this.flashBtn('#p2-btn-serve');
+              this.handleLocalServe('p2');
+            } else if (e.key === 'Backspace') {
+              e.preventDefault();
+              this.flashBtn('#p2-btn-dump');
+              this.handleLocalDump('p2', true);
+            } else if (key === 'h') {
+              this.flashBtn('#p2-btn-sabotage');
+              this.handleLocalSabotage('p2');
+            }
+          }
+        });
+      }
+
+      flashBtn(selector) {
+        const el = document.querySelector(selector);
+        if (!el) return;
+        el.classList.add('key-down');
+        setTimeout(() => el.classList.remove('key-down'), 110);
+      }
+
+      /**
+       * =========================================================
+       * 9. 清理与返回首页
+       * =========================================================
+       */
+      cleanupAll() {
+        if (this.hostTickTimer) {
+          clearInterval(this.hostTickTimer);
+          this.hostTickTimer = null;
+        }
+        if (this.soloTimer) {
+          clearInterval(this.soloTimer);
+          this.soloTimer = null;
+        }
+        if (this.localTimer) {
+          clearInterval(this.localTimer);
+          this.localTimer = null;
+        }
+        this.botTimers.forEach((t) => clearTimeout(t));
+        this.botTimers.clear();
+
+        if (this.guestConn) {
+          try { this.guestConn.close(); } catch (e) {}
+          this.guestConn = null;
+        }
+        this.hostConns.forEach((c) => {
+          try { c.close(); } catch (e) {}
+        });
+        this.hostConns.clear();
+
+        if (this.peer) {
+          try { this.peer.destroy(); } catch (e) {}
+          this.peer = null;
+        }
+
+        this.isHost = false;
+        this.roomCode = null;
+        this.netState = null;
+        this.soloPaused = false;
+        this.hideUpgradeModal();
+        this.hidePodium();
+      }
+
+      returnHome() {
+        this.cleanupAll();
+        this.mode = 'home';
+        this.setConnStatus(this.peerLibReady ? 'ready' : 'error', this.peerLibReady ? 'P2P 联机就绪 · 免登录直连' : 'P2P 引擎未就绪');
+        this.renderProfileUI();
+        this.switchView('view-home');
+      }
+
+      /**
+       * =========================================================
+       * 10. PeerJS P2P 房主逻辑（星型拓扑权威端）
+       * =========================================================
+       */
+      createP2PRoom(retryCount = 0) {
+        if (!this.peerLibReady) {
+          showToast('P2P 联机库尚未加载成功，可先体验本地双人或单人挑战', 'warn');
+          return;
+        }
+        this.cleanupAll();
+        this.isHost = true;
+        this.roomCode = generateNumericRoomCode();
+        this.setConnStatus('connecting', `正在创建房间 ${this.roomCode}...`);
+
+        const peerId = PEER_PREFIX + this.roomCode;
+        this.peer = new window.Peer(peerId, PEER_CONFIG);
+
+        this.peer.on('open', (id) => {
+          this.myId = id;
+          this.setConnStatus('connected', `已建房 ${this.roomCode}（房主）`);
+
+          this.netState = {
+            roomCode: this.roomCode,
+            phase: 'lobby',
+            roundId: 0,
+            timeLeft: ROUND_DURATION,
+            orders: [],
+            players: [
+              this.makeNetPlayer(this.myId, this.profile.name, this.profile.avatarIdx, true, false)
+            ]
+          };
+
+          this.mode = 'lobby';
+          this.switchView('view-lobby');
+          this.renderLobbyUI();
+          showToast(`房间 ${this.roomCode} 创建成功！快发给好友吧`, 'success');
+        });
+
+        this.peer.on('connection', (conn) => {
+          conn.on('open', () => {
+            this.hostConns.set(conn.peer, conn);
+          });
+          conn.on('data', (msg) => this.hostHandleMessage(conn, msg));
+          conn.on('close', () => this.hostHandleDisconnect(conn.peer));
+          conn.on('error', () => this.hostHandleDisconnect(conn.peer));
+        });
+
+        this.peer.on('error', (err) => {
+          console.error('Host Peer 错误:', err);
+          if (err.type === 'unavailable-id' && retryCount < 3) {
+            this.createP2PRoom(retryCount + 1);
+          } else {
+            this.setConnStatus('error', '建房失败，请重试');
+            showToast('创建房间失败，请检查网络后重试', 'danger');
+            this.returnHome();
+          }
+        });
+      }
+
+      makeNetPlayer(id, name, avatarIdx, isHost, isBot) {
+        return {
+          id,
+          name,
+          avatarIdx,
+          isHost,
+          isBot,
+          score: 0,
+          combo: 0,
+          maxCombo: 0,
+          served: 0,
+          sabotagesUsed: 0,
+          streakForItem: 0,
+          heldItem: null
+        };
+      }
+
+      hostHandleDisconnect(peerId) {
+        this.hostConns.delete(peerId);
+        if (!this.netState) return;
+        const left = this.netState.players.find((p) => p.id === peerId);
+        if (left) {
+          this.netState.players = this.netState.players.filter((p) => p.id !== peerId);
+          showToast(`${left.name} 离开了房间`, 'warn');
+          this.hostBroadcast({ type: 'state', state: this.netState });
+          this.syncLocalViewFromNetState();
+        }
+      }
+
+      hostHandleMessage(conn, msg) {
+        if (!this.netState || !msg || !msg.type) return;
+
+        if (msg.type === 'join') {
+          if (this.netState.players.length >= 4) {
+            conn.send({ type: 'reject', reason: '房间已满 4 人！' });
+            setTimeout(() => conn.close(), 300);
+            return;
+          }
+          const exists = this.netState.players.find((p) => p.id === conn.peer);
+          if (!exists) {
+            this.netState.players.push(
+              this.makeNetPlayer(conn.peer, msg.name || '神秘小猫', msg.avatarIdx || 0, false, false)
+            );
+            showToast(`${msg.name || '新朋友'} 加入了房间！`, 'success');
+          }
+          this.hostBroadcast({ type: 'state', state: this.netState });
+          this.syncLocalViewFromNetState();
+          return;
+        }
+
+        if (msg.type === 'updateProfile') {
+          const p = this.netState.players.find((x) => x.id === conn.peer);
+          if (p) {
+            p.name = msg.name || p.name;
+            p.avatarIdx = typeof msg.avatarIdx === 'number' ? msg.avatarIdx : p.avatarIdx;
+            this.hostBroadcast({ type: 'state', state: this.netState });
+            this.syncLocalViewFromNetState();
+          }
+          return;
+        }
+
+        if (msg.type === 'serve') {
+          this.hostProcessServe(conn.peer, msg.cup || []);
+          return;
+        }
+
+        if (msg.type === 'sabotage') {
+          this.hostProcessSabotage(conn.peer);
+          return;
+        }
+
+        if (msg.type === 'rematch') {
+          const p = this.netState.players.find((x) => x.id === conn.peer);
+          showToast(`${p?.name || '好友'} 想再来一局！`, 'info');
+        }
+      }
+
+      hostAddBot() {
+        if (!this.isHost || !this.netState || this.netState.phase !== 'lobby') return;
+        if (this.netState.players.length >= 4) {
+          showToast('房间已满 4 只猫啦！', 'warn');
+          return;
+        }
+        const botIdx = this.netState.players.filter((p) => p.isBot).length;
+        const botId = 'bot_' + Math.random().toString(36).slice(2, 7);
+        const botName = BOT_NAMES[botIdx % BOT_NAMES.length];
+        this.netState.players.push(this.makeNetPlayer(botId, botName, (botIdx + 2) % CAT_BREEDS.length, false, true));
+        this.sound.playPour(2);
+        this.hostBroadcast({ type: 'state', state: this.netState });
+        this.renderLobbyUI();
+      }
+
+      hostRemoveBot(botId) {
+        if (!this.isHost || !this.netState || this.netState.phase !== 'lobby') return;
+        this.netState.players = this.netState.players.filter((p) => p.id !== botId);
+        this.hostBroadcast({ type: 'state', state: this.netState });
+        this.renderLobbyUI();
+      }
+
+      hostBroadcast(payload) {
+        this.hostConns.forEach((conn) => {
+          if (conn.open) {
+            try { conn.send(payload); } catch (e) {}
+          }
+        });
+      }
+
+      hostStartMatch() {
+        if (!this.isHost || !this.netState) return;
+        if (this.hostTickTimer) clearInterval(this.hostTickTimer);
+        this.botTimers.forEach((t) => clearTimeout(t));
+        this.botTimers.clear();
+
+        this.netState.phase = 'playing';
+        this.netState.roundId += 1;
+        this.netState.timeLeft = ROUND_DURATION;
+        this.netState.orders = [randomOrder(), randomOrder(), randomOrder(), randomOrder()];
+        this.netState.players.forEach((p) => {
+          p.score = 0;
+          p.combo = 0;
+          p.maxCombo = 0;
+          p.served = 0;
+          p.sabotagesUsed = 0;
+          p.streakForItem = 0;
+          p.heldItem = null;
+        });
+
+        this.singleCup = [];
+        this.singleBlindUntil = 0;
+
+        this.hostBroadcast({ type: 'state', state: this.netState });
+        this.syncLocalViewFromNetState();
+
+        // 启动房主权威时钟（250ms 精度，驱动倒计时与顾客耐心）
+        let subTick = 0;
+        this.hostTickTimer = setInterval(() => {
+          if (!this.netState || this.netState.phase !== 'playing') return;
+          subTick += 1;
+
+          // 顾客耐心衰减
+          let orderChanged = false;
+          this.netState.orders.forEach((o, idx) => {
+            if (o.mood === 'served') return;
+            o.patience = Math.max(0, o.patience - 1.5);
+            o.mood = o.patience <= 35 ? 'urgent' : 'waiting';
+            if (o.patience <= 0) {
+              this.netState.orders[idx] = randomOrder();
+              orderChanged = true;
+            }
+          });
+
+          // 每 4 个 250ms = 1 秒
+          if (subTick % 4 === 0) {
+            this.netState.timeLeft -= 1;
+            if (this.netState.timeLeft <= 10 && this.netState.timeLeft > 0) {
+              this.sound.playTick();
+            }
+            if (this.netState.timeLeft <= 0) {
+              this.netState.timeLeft = 0;
+              this.netState.phase = 'finished';
+              clearInterval(this.hostTickTimer);
+              this.hostTickTimer = null;
+              this.botTimers.forEach((t) => clearTimeout(t));
+              this.botTimers.clear();
+              this.sound.playVictory();
+              this.hostBroadcast({ type: 'state', state: this.netState });
+              this.syncLocalViewFromNetState();
+              return;
+            }
+          }
+
+          if (subTick % 2 === 0 || orderChanged) {
+            this.hostBroadcast({ type: 'state', state: this.netState });
+            this.syncLocalViewFromNetState();
+          }
+        }, 250);
+
+        // 启动 AI 猫对手循环
+        this.netState.players.filter((p) => p.isBot).forEach((bot) => this.scheduleBotAction(bot.id));
+      }
+
+      scheduleBotAction(botId) {
+        if (!this.isHost || !this.netState || this.netState.phase !== 'playing') return;
+        const delay = 3600 + Math.random() * 2800;
+        const timer = setTimeout(() => {
+          if (!this.netState || this.netState.phase !== 'playing') return;
+          const bot = this.netState.players.find((p) => p.id === botId);
+          if (!bot) return;
+
+          // 若持有道具，优先释放
+          if (bot.heldItem) {
+            this.hostProcessSabotage(botId);
+          } else {
+            const avail = this.netState.orders.filter((o) => o.mood !== 'served');
+            if (avail.length > 0) {
+              const targetOrder = avail[Math.floor(Math.random() * avail.length)];
+              this.hostProcessServe(botId, [...targetOrder.layers]);
+            }
+          }
+          this.scheduleBotAction(botId);
+        }, delay);
+        this.botTimers.set(botId, timer);
+      }
+
+      hostProcessServe(playerId, cupLayers) {
+        if (!this.netState || this.netState.phase !== 'playing') return;
+        const player = this.netState.players.find((p) => p.id === playerId);
+        if (!player) return;
+
+        const matchIdx = this.netState.orders.findIndex((o) => o.mood !== 'served' && isExactMatch(cupLayers, o.layers));
+        if (matchIdx === -1) {
+          player.combo = 0;
+          player.streakForItem = 0;
+          const evt = { type: 'serveResult', ok: false, playerId };
+          this.hostBroadcast(evt);
+          this.handleServeResultEvent(evt);
+          this.hostBroadcast({ type: 'state', state: this.netState });
+          this.syncLocalViewFromNetState();
+          return;
+        }
+
+        // 成功抢单出杯
+        const order = this.netState.orders[matchIdx];
+        order.mood = 'served';
+        player.combo += 1;
+        player.maxCombo = Math.max(player.maxCombo, player.combo);
+        player.served += 1;
+        player.streakForItem += 1;
+
+        const mult = 1 + (player.combo - 1) * 0.15;
+        const earned = Math.round(order.layers.length * 65 * mult);
+        player.score += earned;
+
+        let grantedItem = null;
+        if (player.streakForItem >= 3) {
+          player.streakForItem = 0;
+          player.heldItem = SABOTAGE_KEYS[Math.floor(Math.random() * SABOTAGE_KEYS.length)];
+          grantedItem = player.heldItem;
+        }
+
+        const evt = {
+          type: 'serveResult',
+          ok: true,
+          playerId,
+          playerName: player.name,
+          orderIdx: matchIdx,
+          earned,
+          combo: player.combo,
+          grantedItem
+        };
+        this.hostBroadcast(evt);
+        this.handleServeResultEvent(evt);
+        this.hostBroadcast({ type: 'state', state: this.netState });
+        this.syncLocalViewFromNetState();
+
+        // 350ms 后替换为新顾客（让玩家看到开心冒爱心）
+        const servedOrderId = order.id;
+        setTimeout(() => {
+          if (!this.netState || this.netState.phase !== 'playing') return;
+          const idx = this.netState.orders.findIndex((o) => o.id === servedOrderId);
+          if (idx !== -1) {
+            this.netState.orders[idx] = randomOrder();
+            this.hostBroadcast({ type: 'state', state: this.netState });
+            this.syncLocalViewFromNetState();
+          }
+        }, 360);
+      }
+
+      hostProcessSabotage(senderId) {
+        if (!this.netState || this.netState.phase !== 'playing') return;
+        const sender = this.netState.players.find((p) => p.id === senderId);
+        if (!sender || !sender.heldItem) return;
+
+        const others = this.netState.players
+          .filter((p) => p.id !== senderId)
+          .sort((a, b) => b.score - a.score);
+
+        if (others.length === 0) return;
+
+        const target = others[0];
+        const itemType = sender.heldItem;
+        sender.heldItem = null;
+        sender.sabotagesUsed += 1;
+
+        const evt = {
+          type: 'sabotage',
+          fromId: sender.id,
+          fromName: sender.name,
+          targetId: target.id,
+          targetName: target.name,
+          itemType
+        };
+
+        this.hostBroadcast(evt);
+        this.handleSabotageEvent(evt);
+        this.hostBroadcast({ type: 'state', state: this.netState });
+        this.syncLocalViewFromNetState();
+      }
+
+      /**
+       * =========================================================
+       * 11. PeerJS P2P 访客逻辑（Guest 端）
+       * =========================================================
+       */
+      joinP2PRoom(code) {
+        if (!code || !/^[0-9]{4}$/.test(code)) {
+          showToast('请输入完整的 4 位数字房间号', 'warn');
+          return;
+        }
+        if (!this.peerLibReady) {
+          showToast('P2P 引擎未就绪，请刷新后重试', 'warn');
+          return;
+        }
+
+        this.cleanupAll();
+        this.isHost = false;
+        this.roomCode = code;
+        this.setConnStatus('connecting', `正在连接房间 ${code}...`);
+
+        this.peer = new window.Peer(PEER_CONFIG);
+        let settled = false;
+
+        const timeout = setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            this.setConnStatus('error', '房间不存在或连接超时');
+            showToast(`无法连接到房间 ${code}，请确认房主在线且房号正确`, 'danger');
+            this.returnHome();
+          }
+        }, 9000);
+
+        this.peer.on('open', (id) => {
+          this.myId = id;
+          const conn = this.peer.connect(PEER_PREFIX + code, { reliable: true });
+          this.guestConn = conn;
+
+          conn.on('open', () => {
+            settled = true;
+            clearTimeout(timeout);
+            this.setConnStatus('connected', `已连接房间 ${code}`);
+            conn.send({
+              type: 'join',
+              name: this.profile.name,
+              avatarIdx: this.profile.avatarIdx
+            });
+          });
+
+          conn.on('data', (msg) => this.guestHandleMessage(msg));
+
+          conn.on('close', () => {
+            if (!settled) return;
+            this.setConnStatus('error', '房主已断开连接');
+            showToast('房主已断开连接，已返回首页', 'danger');
+            this.returnHome();
+          });
+
+          conn.on('error', () => {
+            settled = true;
+            clearTimeout(timeout);
+            this.setConnStatus('error', '连接中断');
+            showToast('连接房主失败', 'danger');
+            this.returnHome();
+          });
+        });
+
+        this.peer.on('error', (err) => {
+          settled = true;
+          clearTimeout(timeout);
+          if (err.type === 'peer-unavailable') {
+            this.setConnStatus('error', '房间不存在');
+            showToast(`房间 ${code} 不存在，请核对 4 位房间号`, 'danger');
+          } else {
+            this.setConnStatus('error', '联机连接失败');
+            showToast('网络环境限制了 P2P 连接，请重试或切换网络', 'danger');
+          }
+          this.returnHome();
+        });
+      }
+
+      sendToHost(payload) {
+        if (this.guestConn && this.guestConn.open) {
+          this.guestConn.send(payload);
+        }
+      }
+
+      guestHandleMessage(msg) {
+        if (!msg || !msg.type) return;
+
+        if (msg.type === 'reject') {
+          showToast(msg.reason || '无法加入房间', 'danger');
+          this.returnHome();
+          return;
+        }
+
+        if (msg.type === 'state') {
+          const prevRound = this.netState?.roundId;
+          this.netState = msg.state;
+          if (this.netState.phase === 'playing' && prevRound !== this.netState.roundId) {
+            this.singleCup = [];
+            this.singleBlindUntil = 0;
+          }
+          if (this.netState.phase === 'playing' && this.netState.timeLeft <= 10 && this.netState.timeLeft > 0) {
+            this.sound.playTick();
+          }
+          if (this.netState.phase === 'finished') {
+            this.sound.playVictory();
+          }
+          this.syncLocalViewFromNetState();
+          return;
+        }
+
+        if (msg.type === 'serveResult') {
+          this.handleServeResultEvent(msg);
+          return;
+        }
+
+        if (msg.type === 'sabotage') {
+          this.handleSabotageEvent(msg);
+        }
+      }
+
+      /**
+       * 同步 P2P 状态到本地画面（Host 和 Guest 通用）
+       */
+      syncLocalViewFromNetState() {
+        if (!this.netState) return;
+
+        if (this.netState.phase === 'lobby') {
+          this.mode = 'lobby';
+          this.hidePodium();
+          this.switchView('view-lobby');
+          this.renderLobbyUI();
+          return;
+        }
+
+        if (this.netState.phase === 'playing') {
+          this.mode = 'online';
+          this.hidePodium();
+          this.switchView('view-game-single');
+          document.getElementById('solo-buffs-bar').classList.add('hidden');
+          document.getElementById('game-mode-label').textContent = 'P2P 在线抢单';
+          document.getElementById('game-room-tag').textContent = `房间 ${this.netState.roomCode}`;
+          this.updateTimerDisplay(this.netState.timeLeft);
+          this.renderSingleOrders(this.netState.orders);
+          this.renderSingleCup();
+          this.renderOnlineHUD();
+          this.renderOnlineScoreboard(this.netState.players);
+          return;
+        }
+
+        if (this.netState.phase === 'finished') {
+          const ranked = [...this.netState.players].sort((a, b) => b.score - a.score);
+          this.showPodium(ranked, true);
+        }
+      }
+
+      handleServeResultEvent(evt) {
+        if (evt.playerId === this.myId) {
+          if (evt.ok) {
+            this.singleCup = [];
+            this.sound.playServe(evt.combo);
+            const anchor = document.getElementById(`single-order-${evt.orderIdx}`) || document.getElementById('single-cup');
+            spawnFloatingText(anchor, `+${evt.earned}${evt.combo >= 3 ? ` 🔥x${(1 + (evt.combo - 1) * 0.15).toFixed(1)}` : ''}`, '#fbbf24');
+            if (evt.grantedItem) {
+              const info = SABOTAGES[evt.grantedItem];
+              showToast(`连击充能！获得「${info.icon} ${info.name}」，按 Q 释放`, 'warn');
+            }
+          } else {
+            this.singleCup = [];
+            this.sound.playError();
+            this.shakeCup('single-cup');
+            spawnFloatingText(document.getElementById('single-cup'), '配方不对！', '#fb7185');
+          }
+          this.renderSingleCup();
+        } else if (evt.ok) {
+          const anchor = document.getElementById(`single-order-${evt.orderIdx}`);
+          if (anchor) {
+            spawnFloatingText(anchor, `${evt.playerName} 抢先出杯!`, '#22d3ee');
+          }
+        }
+      }
+
+      handleSabotageEvent(evt) {
+        const info = SABOTAGES[evt.itemType];
+        if (!info) return;
+
+        if (evt.targetId === this.myId) {
+          this.sound.playSabotage();
+          showToast(`⚠️ ${evt.fromName} 对你甩出「${info.icon} ${info.name}」！`, 'danger');
+          if (evt.itemType === 'paw') {
+            this.triggerPawOverlay('single-paw-overlay', 3500);
+          } else if (evt.itemType === 'spill') {
+            this.singleCup = [];
+            this.renderSingleCup();
+            const cupEl = document.getElementById('single-cup');
+            cupEl.classList.remove('cup-spilled');
+            void cupEl.offsetWidth;
+            cupEl.classList.add('cup-spilled');
+            spawnFloatingText(cupEl, '💦 手滑打翻！', '#38bdf8');
+          } else if (evt.itemType === 'blind') {
+            this.singleBlindUntil = Date.now() + 3500;
+            if (this.netState) this.renderSingleOrders(this.netState.orders);
+            setTimeout(() => {
+              if (this.mode === 'online' && this.netState) {
+                this.renderSingleOrders(this.netState.orders);
+              }
+            }, 3600);
+          }
+        } else if (evt.fromId === this.myId) {
+          this.sound.playSabotage();
+          showToast(`已向 ${evt.targetName} 扔出「${info.icon} ${info.name}」！`, 'success');
+        } else {
+          showToast(`${evt.fromName} 对 ${evt.targetName} 使用了「${info.name}」！`, 'info');
+        }
+      }
+
+      /**
+       * 大厅 UI 渲染与邀请复制
+       */
+      renderLobbyUI() {
+        if (!this.netState) return;
+        document.getElementById('lobby-room-code').textContent = this.netState.roomCode;
+        document.getElementById('lobby-role-badge').textContent = this.isHost ? '房主' : '访客';
+        document.getElementById('lobby-player-count').textContent = this.netState.players.length;
+
+        // 沙盒 / 本地文件提示
+        const hintEl = document.getElementById('sandbox-deploy-hint');
+        hintEl.classList.toggle('hidden', isStandardWebUrl());
+
+        // 房主专属按钮
+        document.getElementById('btn-add-bot').classList.toggle('hidden', !this.isHost || this.netState.players.length >= 4);
+        document.getElementById('btn-lobby-start').classList.toggle('hidden', !this.isHost);
+        document.getElementById('lobby-wait-hint').classList.toggle('hidden', this.isHost);
+
+        const grid = document.getElementById('lobby-players-grid');
+        let html = '';
+        for (let i = 0; i < 4; i++) {
+          const p = this.netState.players[i];
+          if (p) {
+            const isMe = p.id === this.myId;
+            html += `
+              <div class="bg-[#0b0d14]/85 border ${isMe ? 'border-cyan-400/55' : 'border-white/10'} rounded-2xl p-3 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  ${createCatSVG(p.avatarIdx, 'waiting', 'w-11 h-11')}
+                  <div class="min-w-0">
+                    <div class="text-xs sm:text-sm font-black text-white truncate flex items-center gap-1">
+                      ${escapeHtml(p.name)}
+                      ${p.isHost ? '<span class="text-[10px] text-amber-400">👑</span>' : ''}
+                    </div>
+                    <div class="text-[10px] ${p.isBot ? 'text-pink-300' : (isMe ? 'text-cyan-300' : 'text-emerald-400')} font-semibold">
+                      ${p.isBot ? 'AI 对手 · 自动抢单' : (isMe ? '你自己 · 已就绪' : '已入座 · P2P 直连')}
+                    </div>
+                  </div>
+                </div>
+                ${this.isHost && p.isBot ? `<button type="button" data-rm-bot="${p.id}" class="text-xs text-slate-400 hover:text-rose-400 px-1.5 py-1">✕</button>` : ''}
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="bg-[#0b0d14]/40 border border-dashed border-white/10 rounded-2xl p-3 flex items-center justify-center text-xs text-slate-500 font-semibold min-h-[68px]">
+                等待好友加入...
+              </div>
+            `;
+          }
+        }
+        grid.innerHTML = html;
+
+        grid.querySelectorAll('[data-rm-bot]').forEach((btn) => {
+          btn.addEventListener('click', () => this.hostRemoveBot(btn.dataset.rmBot));
+        });
+      }
+
+      copyRoomCodeOnly() {
+        if (!this.roomCode) return;
+        const ok = copyTextToClipboard(this.roomCode);
+        showToast(ok ? `已复制 4 位房间号：${this.roomCode}` : `房间号：${this.roomCode}`, 'success');
+      }
+
+      copyInviteLink() {
+        if (!this.roomCode) return;
+        const url = buildShareableInviteUrl(this.roomCode);
+        if (!url) {
+          copyTextToClipboard(this.roomCode);
+          showToast(`当前为预览环境，已为你复制房间号 ${this.roomCode}（部署到 Netlify/GitHub Pages 后即可生成直连网址）`, 'warn');
+          return;
+        }
+        const msg = `☕ 来《深夜猫咖：联机抢单王》和我拼手速！房间号【${this.roomCode}】 点开直连：${url}`;
+        const ok = copyTextToClipboard(msg);
+        showToast(ok ? '已复制邀请链接！发给好友点开即可进房' : `邀请链接：${url}`, 'success');
+      }
+
+      /**
+       * =========================================================
+       * 12. 单人极速挑战（90秒 + 每 5 杯肉鸽强化）
+       * =========================================================
+       */
+      startSolo() {
+        this.cleanupAll();
+        this.mode = 'solo';
+        this.singleCup = [];
+        this.singleBlindUntil = 0;
+        this.soloPaused = false;
+
+        this.soloState = {
+          timeLeft: ROUND_DURATION,
+          score: 0,
+          combo: 0,
+          maxCombo: 0,
+          served: 0,
+          orders: [randomOrder(), randomOrder(), randomOrder(), randomOrder()],
+          buffs: {
+            catnip: 0,
+            doubleTip: 0,
+            filter: false,
+            autoServe: false
+          }
+        };
+
+        document.getElementById('game-mode-label').textContent = '单人肉鸽挑战';
+        document.getElementById('game-room-tag').textContent = `最高纪录 ${this.profile.soloBest}`;
+
+        this.switchView('view-game-single');
+        this.renderSoloBuffsBar();
+        this.updateTimerDisplay(this.soloState.timeLeft);
+        this.renderSingleOrders(this.soloState.orders);
+        this.renderSingleCup();
+        this.renderSoloHUD();
+
+        let subTick = 0;
+        this.soloTimer = setInterval(() => {
+          if (this.soloPaused || !this.soloState) return;
+          subTick += 1;
+
+          // 顾客耐心衰减（猫薄荷香薰可减缓）
+          const decayFactor = Math.pow(0.75, this.soloState.buffs.catnip);
+          const decay = 1.45 * decayFactor;
+          this.soloState.orders.forEach((o, idx) => {
+            if (o.mood === 'served') return;
+            o.patience = Math.max(0, o.patience - decay);
+            o.mood = o.patience <= 35 ? 'urgent' : 'waiting';
+            if (o.patience <= 0) {
+              this.soloState.orders[idx] = randomOrder();
+              this.soloState.combo = 0;
+            }
+          });
+
+          if (subTick % 4 === 0) {
+            this.soloState.timeLeft -= 1;
+            this.updateTimerDisplay(this.soloState.timeLeft);
+            if (this.soloState.timeLeft <= 10 && this.soloState.timeLeft > 0) {
+              this.sound.playTick();
+            }
+            if (this.soloState.timeLeft <= 0) {
+              clearInterval(this.soloTimer);
+              this.soloTimer = null;
+              this.sound.playVictory();
+              if (this.soloState.score > this.profile.soloBest) {
+                this.profile.soloBest = this.soloState.score;
+                this.saveProfile();
+              }
+              this.showPodium([{
+                id: this.myId,
+                name: this.profile.name,
+                avatarIdx: this.profile.avatarIdx,
+                score: this.soloState.score,
+                maxCombo: this.soloState.maxCombo,
+                served: this.soloState.served,
+                sabotagesUsed: 0
+              }], false);
+              return;
+            }
+          }
+
+          if (subTick % 2 === 0) {
+            this.renderSingleOrders(this.soloState.orders);
+            this.renderSoloHUD();
+          }
+        }, 250);
+      }
+
+      openRoguelikeUpgradeModal() {
+        this.soloPaused = true;
+        const pool = [...ROGUELIKE_UPGRADES].sort(() => Math.random() - 0.5).slice(0, 3);
+        const container = document.getElementById('upgrade-cards');
+        container.innerHTML = pool.map((u) => `
+          <button type="button" data-upg="${u.id}" class="btn-press p-4 rounded-2xl bg-[#0b0d14]/90 hover:bg-emerald-500/15 border border-white/10 hover:border-emerald-400 flex flex-col gap-1.5 transition">
+            <span class="text-2xl">${u.icon}</span>
+            <span class="text-sm font-black text-white">${u.name}</span>
+            <span class="text-[11px] text-slate-300 leading-snug">${u.desc}</span>
+          </button>
+        `).join('');
+
+        container.querySelectorAll('[data-upg]').forEach((btn) => {
+          btn.addEventListener('click', () => this.applyRoguelikeUpgrade(btn.dataset.upg));
+        });
+
+        const modal = document.getElementById('modal-upgrade');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      hideUpgradeModal() {
+        const modal = document.getElementById('modal-upgrade');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+
+      applyRoguelikeUpgrade(id) {
+        if (!this.soloState) return;
+        this.sound.playServe(4);
+        if (id === 'catnip') this.soloState.buffs.catnip += 1;
+        else if (id === 'doubleTip') this.soloState.buffs.doubleTip += 1;
+        else if (id === 'filter') this.soloState.buffs.filter = true;
+        else if (id === 'autoServe') this.soloState.buffs.autoServe = true;
+        else if (id === 'extraTime') {
+          this.soloState.timeLeft += 12;
+          this.updateTimerDisplay(this.soloState.timeLeft);
+        }
+
+        const upg = ROGUELIKE_UPGRADES.find((u) => u.id === id);
+        showToast(`已装备强化：${upg.icon} ${upg.name}！`, 'success');
+        this.renderSoloBuffsBar();
+        this.hideUpgradeModal();
+        this.soloPaused = false;
+      }
+
+      renderSoloBuffsBar() {
+        const bar = document.getElementById('solo-buffs-bar');
+        if (this.mode !== 'solo' || !this.soloState) {
+          bar.classList.add('hidden');
+          return;
+        }
+        const b = this.soloState.buffs;
+        const tags = [];
+        if (b.catnip > 0) tags.push(`🌿 猫薄荷 x${b.catnip}`);
+        if (b.doubleTip > 0) tags.push(`💰 小费 +${b.doubleTip * 50}%`);
+        if (b.filter) tags.push(`🛡️ 防呆滤网`);
+        if (b.autoServe) tags.push(`⚡ 自动出杯`);
+
+        if (tags.length === 0) {
+          bar.classList.add('hidden');
+          return;
+        }
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+        bar.innerHTML = tags.map((t) => `<span class="px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-400/35 text-emerald-300 text-[10px] font-bold">${t}</span>`).join('');
+      }
+
+      /**
+       * =========================================================
+       * 13. 单人 & 在线联机操作台交互
+       * =========================================================
+       */
+      handleSingleAdd(ingId) {
+        if (this.mode !== 'solo' && this.mode !== 'online') return;
+        if (this.soloPaused) return;
+        if (this.singleCup.length >= 4) {
+          this.shakeCup('single-cup');
+          this.sound.playError();
+          return;
+        }
+        this.singleCup.push(ingId);
+        this.sound.playPour(this.singleCup.length - 1);
+        this.renderSingleCup(true);
+
+        // 单人肉鸽「极速手冲」：配方完全匹配任意订单时自动出杯
+        if (this.mode === 'solo' && this.soloState?.buffs.autoServe) {
+          const hit = this.soloState.orders.some((o) => o.mood !== 'served' && isExactMatch(this.singleCup, o.layers));
+          if (hit) {
+            setTimeout(() => this.handleSingleServe(), 90);
+          }
+        }
+      }
+
+      handleSingleDump(playSfx = false) {
+        if (this.mode !== 'solo' && this.mode !== 'online') return;
+        if (this.singleCup.length === 0) return;
+        this.singleCup = [];
+        if (playSfx) this.sound.playDump();
+        this.renderSingleCup();
+      }
+
+      handleSingleServe() {
+        if (this.mode === 'online') {
+          if (this.singleCup.length === 0) return;
+          const cupCopy = [...this.singleCup];
+          if (this.isHost) {
+            this.hostProcessServe(this.myId, cupCopy);
+          } else {
+            this.sendToHost({ type: 'serve', cup: cupCopy });
+          }
+          return;
+        }
+
+        if (this.mode === 'solo' && this.soloState && !this.soloPaused) {
+          if (this.singleCup.length === 0) return;
+          const matchIdx = this.soloState.orders.findIndex((o) => o.mood !== 'served' && isExactMatch(this.singleCup, o.layers));
+          if (matchIdx === -1) {
+            this.sound.playError();
+            this.shakeCup('single-cup');
+            this.singleCup = [];
+            if (this.soloState.buffs.filter) {
+              spawnFloatingText(document.getElementById('single-cup'), '🛡️ 滤网护连击!', '#4ade80');
+            } else {
+              this.soloState.combo = 0;
+              spawnFloatingText(document.getElementById('single-cup'), '配方不对！', '#fb7185');
+            }
+            this.renderSingleCup();
+            this.renderSoloHUD();
+            return;
+          }
+
+          const order = this.soloState.orders[matchIdx];
+          order.mood = 'served';
+          const layersCount = this.singleCup.length;
+          this.singleCup = [];
+          this.soloState.combo += 1;
+          this.soloState.maxCombo = Math.max(this.soloState.maxCombo, this.soloState.combo);
+          this.soloState.served += 1;
+
+          const mult = 1 + (this.soloState.combo - 1) * 0.15;
+          const tipBoost = 1 + this.soloState.buffs.doubleTip * 0.5;
+          const earned = Math.round(layersCount * 65 * mult * tipBoost);
+          this.soloState.score += earned;
+
+          this.sound.playServe(this.soloState.combo);
+          spawnFloatingText(document.getElementById(`single-order-${matchIdx}`), `+${earned}`, '#fbbf24');
+
+          this.renderSingleCup();
+          this.renderSingleOrders(this.soloState.orders);
+          this.renderSoloHUD();
+
+          const servedId = order.id;
+          const shouldUpgrade = this.soloState.served % 5 === 0;
+          setTimeout(() => {
+            if (!this.soloState) return;
+            const idx = this.soloState.orders.findIndex((o) => o.id === servedId);
+            if (idx !== -1) this.soloState.orders[idx] = randomOrder();
+            this.renderSingleOrders(this.soloState.orders);
+            if (shouldUpgrade && this.soloState.timeLeft > 1) {
+              this.openRoguelikeUpgradeModal();
+            }
+          }, 320);
+        }
+      }
+
+      handleSingleSabotage() {
+        if (this.mode !== 'online') return;
+        if (this.isHost) {
+          this.hostProcessSabotage(this.myId);
+        } else {
+          this.sendToHost({ type: 'sabotage' });
+        }
+      }
+
+      renderSingleCup(animateLast = false) {
+        this.renderCupDOM('single-cup', this.singleCup, animateLast);
+        const textEl = document.getElementById('single-cup-text');
+        if (this.singleCup.length === 0) {
+          textEl.textContent = '空杯 0/4';
+          textEl.className = 'mt-1 text-[11px] font-bold text-slate-500';
+        } else {
+          textEl.textContent = this.singleCup.map((id) => ING_MAP[id].short).join(' → ');
+          textEl.className = 'mt-1 text-[11px] font-bold text-amber-300 truncate max-w-[160px]';
+        }
+      }
+
+      renderOnlineHUD() {
+        if (!this.netState) return;
+        const me = this.netState.players.find((p) => p.id === this.myId);
+        if (!me) return;
+
+        const mult = 1 + Math.max(0, me.combo) * 0.15;
+        document.getElementById('single-combo').textContent = `x${mult.toFixed(1)}`;
+
+        const sabBtn = document.getElementById('single-btn-sabotage');
+        const sabLabel = document.getElementById('single-sabotage-label');
+        if (me.heldItem) {
+          const item = SABOTAGES[me.heldItem];
+          sabBtn.disabled = false;
+          sabBtn.className = 'btn-press sabotage-ready py-2 px-2 rounded-2xl bg-gradient-to-r from-pink-500/35 to-amber-500/35 border border-pink-400 text-white font-black text-[11px] sm:text-xs flex flex-col items-center justify-center';
+          sabLabel.textContent = `${item.icon} ${item.name}`;
+        } else {
+          sabBtn.disabled = true;
+          sabBtn.className = 'btn-press py-2 px-2 rounded-2xl bg-[#1a2236] border border-white/10 text-slate-500 font-extrabold text-[11px] flex flex-col items-center justify-center';
+          sabLabel.textContent = `⚡ 充能 ${me.streakForItem}/3`;
+        }
+      }
+
+      renderSoloHUD() {
+        if (!this.soloState) return;
+        const mult = 1 + Math.max(0, this.soloState.combo) * 0.15;
+        document.getElementById('single-combo').textContent = `x${mult.toFixed(1)}`;
+
+        const sabBtn = document.getElementById('single-btn-sabotage');
+        const sabLabel = document.getElementById('single-sabotage-label');
+        const mod5 = this.soloState.served % 5;
+        sabBtn.disabled = true;
+        sabBtn.className = 'btn-press py-2 px-2 rounded-2xl bg-[#1a2236] border border-emerald-400/30 text-emerald-300 font-extrabold text-[11px] flex flex-col items-center justify-center';
+        sabLabel.textContent = `✨ 强化 ${mod5}/5`;
+
+        const bar = document.getElementById('live-scoreboard');
+        bar.innerHTML = `
+          <div class="flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-400/40">
+            ${createCatSVG(this.profile.avatarIdx, 'waiting', 'w-6 h-6')}
+            <span class="text-xs font-bold text-slate-200">${escapeHtml(this.profile.name)}</span>
+            <span class="text-base font-black text-amber-400 tabular-nums">${this.soloState.score} 分</span>
+            <span class="text-[11px] text-slate-400">· 已出 ${this.soloState.served} 杯</span>
+          </div>
+        `;
+      }
+
+      renderOnlineScoreboard(players) {
+        const list = [...players].sort((a, b) => b.score - a.score);
+        const bar = document.getElementById('live-scoreboard');
+        bar.innerHTML = list.map((p, rank) => {
+          const isMe = p.id === this.myId;
+          return `
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border ${isMe ? 'bg-cyan-500/15 border-cyan-400/55' : 'bg-[#0b0d14]/80 border-white/10'} shrink-0">
+              <span class="text-[10px] font-black ${rank === 0 ? 'text-amber-400' : 'text-slate-400'}">#${rank + 1}</span>
+              ${createCatSVG(p.avatarIdx, 'waiting', 'w-5 h-5')}
+              <span class="text-[11px] font-bold text-slate-200 max-w-[64px] truncate">${escapeHtml(p.name)}</span>
+              <span class="text-xs font-black text-amber-300 tabular-nums">${p.score}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      /**
+       * =========================================================
+       * 14. 本地同屏双人 (1v1) 模式
+       * =========================================================
+       */
+      startLocal2P() {
+        this.cleanupAll();
+        this.mode = 'local2p';
+        this.localTimeLeft = ROUND_DURATION;
+        this.localOrders = [randomOrder(), randomOrder(), randomOrder()];
+        this.localPlayers = {
+          p1: { id: 'p1', name: '玩家 1 (金猫)', avatarIdx: 1, cup: [], score: 0, combo: 0, maxCombo: 0, served: 0, streakForItem: 0, heldItem: null, sabotagesUsed: 0, blindUntil: 0 },
+          p2: { id: 'p2', name: '玩家 2 (蓝猫)', avatarIdx: 0, cup: [], score: 0, combo: 0, maxCombo: 0, served: 0, streakForItem: 0, heldItem: null, sabotagesUsed: 0, blindUntil: 0 }
+        };
+
+        this.switchView('view-game-local2p');
+        this.updateTimerDisplay(this.localTimeLeft);
+        this.renderLocalOrders();
+        this.renderLocalPlayer('p1');
+        this.renderLocalPlayer('p2');
+
+        this.localTimer = setInterval(() => {
+          this.localTimeLeft -= 1;
+          this.updateTimerDisplay(this.localTimeLeft);
+          if (this.localTimeLeft <= 10 && this.localTimeLeft > 0) this.sound.playTick();
+          if (this.localTimeLeft <= 0) {
+            clearInterval(this.localTimer);
+            this.localTimer = null;
+            this.sound.playVictory();
+            const ranked = [this.localPlayers.p1, this.localPlayers.p2].sort((a, b) => b.score - a.score);
+            this.showPodium(ranked, false);
+          }
+        }, 1000);
+      }
+
+      handleLocalAdd(pid, ingId) {
+        if (this.mode !== 'local2p') return;
+        const p = this.localPlayers[pid];
+        if (p.cup.length >= 4) {
+          this.shakeCup(`${pid}-cup`);
+          this.sound.playError();
+          return;
+        }
+        p.cup.push(ingId);
+        this.sound.playPour(p.cup.length - 1);
+        this.renderCupDOM(`${pid}-cup`, p.cup, true);
+      }
+
+      handleLocalDump(pid, playSfx = false) {
+        if (this.mode !== 'local2p') return;
+        const p = this.localPlayers[pid];
+        if (p.cup.length === 0) return;
+        p.cup = [];
+        if (playSfx) this.sound.playDump();
+        this.renderCupDOM(`${pid}-cup`, p.cup, false);
+      }
+
+      handleLocalServe(pid) {
+        if (this.mode !== 'local2p') return;
+        const p = this.localPlayers[pid];
+        if (p.cup.length === 0) return;
+
+        const matchIdx = this.localOrders.findIndex((o) => isExactMatch(p.cup, o.layers));
+        if (matchIdx === -1) {
+          this.sound.playError();
+          this.shakeCup(`${pid}-cup`);
+          p.combo = 0;
+          p.streakForItem = 0;
+          p.cup = [];
+          spawnFloatingText(document.getElementById(`${pid}-cup`), '配方不对！', '#fb7185');
+          this.renderLocalPlayer(pid);
+          return;
+        }
+
+        const layersCount = p.cup.length;
+        p.cup = [];
+        p.combo += 1;
+        p.maxCombo = Math.max(p.maxCombo, p.combo);
+        p.served += 1;
+        p.streakForItem += 1;
+
+        const mult = 1 + (p.combo - 1) * 0.15;
+        const earned = Math.round(layersCount * 65 * mult);
+        p.score += earned;
+
+        if (p.streakForItem >= 3) {
+          p.streakForItem = 0;
+          p.heldItem = SABOTAGE_KEYS[Math.floor(Math.random() * SABOTAGE_KEYS.length)];
+        }
+
+        this.sound.playServe(p.combo);
+        spawnFloatingText(document.getElementById(`${pid}-cup`), `+${earned}`, pid === 'p1' ? '#fbbf24' : '#22d3ee');
+
+        this.localOrders[matchIdx] = randomOrder();
+        this.renderLocalOrders();
+        this.renderLocalPlayer(pid);
+      }
+
+      handleLocalSabotage(pid) {
+        if (this.mode !== 'local2p') return;
+        const attacker = this.localPlayers[pid];
+        if (!attacker.heldItem) return;
+
+        const targetId = pid === 'p1' ? 'p2' : 'p1';
+        const target = this.localPlayers[targetId];
+        const type = attacker.heldItem;
+        attacker.heldItem = null;
+        attacker.sabotagesUsed += 1;
+        this.sound.playSabotage();
+        this.renderLocalPlayer(pid);
+
+        showToast(`${attacker.name} 使出「${SABOTAGES[type].icon} ${SABOTAGES[type].name}」！`, 'warn');
+
+        if (type === 'paw') {
+          this.triggerPawOverlay(`${targetId}-paw-overlay`, 3500);
+        } else if (type === 'spill') {
+          target.cup = [];
+          this.renderCupDOM(`${targetId}-cup`, target.cup, false);
+          const cupEl = document.getElementById(`${targetId}-cup`);
+          cupEl.classList.remove('cup-spilled');
+          void cupEl.offsetWidth;
+          cupEl.classList.add('cup-spilled');
+        } else if (type === 'blind') {
+          target.blindUntil = Date.now() + 3500;
+          this.renderLocalOrders();
+          setTimeout(() => {
+            if (this.mode === 'local2p') this.renderLocalOrders();
+          }, 3600);
+        }
+      }
+
+      renderLocalPlayer(pid) {
+        const p = this.localPlayers[pid];
+        document.getElementById(`${pid}-score`).textContent = p.score;
+        const mult = 1 + Math.max(0, p.combo) * 0.15;
+        document.getElementById(`${pid}-combo`).textContent = `x${mult.toFixed(1)}`;
+        this.renderCupDOM(`${pid}-cup`, p.cup, false);
+
+        const btn = document.getElementById(`${pid}-btn-sabotage`);
+        if (p.heldItem) {
+          const item = SABOTAGES[p.heldItem];
+          btn.disabled = false;
+          btn.className = 'btn-press sabotage-ready py-1.5 px-1.5 rounded-xl bg-gradient-to-r from-pink-500/35 to-amber-500/35 border border-pink-400 text-white font-black text-[10px]';
+          btn.textContent = `${item.icon} ${item.name}`;
+        } else {
+          btn.disabled = true;
+          btn.className = 'btn-press py-1.5 px-1.5 rounded-xl bg-[#1a2236] border border-white/10 text-slate-500 font-extrabold text-[10px]';
+          btn.textContent = `⚡ ${p.streakForItem}/3`;
+        }
+      }
+
+      renderLocalOrders() {
+        const grid = document.getElementById('local-orders-grid');
+        const anyBlinded = Date.now() < this.localPlayers.p1.blindUntil || Date.now() < this.localPlayers.p2.blindUntil;
+        grid.innerHTML = this.localOrders.map((order, idx) => this.buildOrderCardHTML(order, `local-order-${idx}`, anyBlinded, true)).join('');
+      }
+
+      /**
+       * =========================================================
+       * 15. 共享渲染组件（猫爪擦除、订单卡片、玻璃杯、颁奖台）
+       * =========================================================
+       */
+      triggerPawOverlay(overlayId, durationMs) {
+        const el = document.getElementById(overlayId);
+        if (!el) return;
+        const positions = [
+          { top: '12%', left: '14%', rot: '-18deg' },
+          { top: '26%', left: '54%', rot: '16deg' },
+          { top: '48%', left: '30%', rot: '8deg' }
+        ];
+        let remaining = positions.length;
+
+        el.innerHTML = `
+          <div class="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-pink-500/80 text-white text-[10px] font-black shadow pointer-events-none">
+            🐾 点击猫爪可快速擦除！
+          </div>
+          ${positions.map((pos, i) => `
+            <div class="paw-print absolute" data-paw-idx="${i}" style="top:${pos.top};left:${pos.left};--rot:${pos.rot};animation-delay:${i * 55}ms">
+              ${createPawSVG()}
+            </div>
+          `).join('')}
+        `;
+        el.classList.remove('hidden');
+
+        el.querySelectorAll('.paw-print').forEach((paw) => {
+          paw.addEventListener('click', () => {
+            if (paw.classList.contains('paw-wiped')) return;
+            paw.classList.add('paw-wiped');
+            this.sound.playPour(3);
+            remaining -= 1;
+            if (remaining <= 0) {
+              setTimeout(() => {
+                el.classList.add('hidden');
+                el.innerHTML = '';
+              }, 160);
+            }
+          });
+        });
+
+        setTimeout(() => {
+          el.classList.add('hidden');
+          el.innerHTML = '';
+        }, durationMs);
+      }
+
+      updateTimerDisplay(sec) {
+        const str = `${Math.max(0, sec)}s`;
+        const urgent = sec <= 10;
+        const elSingle = document.getElementById('game-timer');
+        const elLocal = document.getElementById('local-timer');
+        if (elSingle) {
+          elSingle.textContent = str;
+          elSingle.className = `text-base sm:text-xl font-black tabular-nums ${urgent ? 'text-rose-400 animate-pulse' : 'text-white'}`;
+        }
+        if (elLocal) {
+          elLocal.textContent = str;
+          elLocal.className = urgent ? 'text-rose-400 animate-pulse' : 'text-white';
+        }
+      }
+
+      renderSingleOrders(orders) {
+        const grid = document.getElementById('single-orders-grid');
+        const isBlinded = Date.now() < this.singleBlindUntil;
+        grid.innerHTML = orders.map((order, idx) => this.buildOrderCardHTML(order, `single-order-${idx}`, isBlinded, false)).join('');
+      }
+
+      buildOrderCardHTML(order, domId, isBlinded = false, compact = false) {
+        const layersVisual = order.layers.map((ingId) => {
+          const ing = ING_MAP[ingId];
+          return `<div class="w-full flex-1 border-t border-white/25 ${ing.extraClass}" style="background:${ing.gradient};"></div>`;
+        }).join('');
+
+        const layersText = [...order.layers].reverse().map((ingId) => {
+          const ing = ING_MAP[ingId];
+          const label = isBlinded ? '???' : ing.short;
+          const labelClass = isBlinded ? 'text-pink-300 animate-pulse' : 'text-slate-200';
+          return `
+            <div class="flex items-center gap-1 leading-none">
+              <span class="w-2 h-2 rounded-full shrink-0" style="background:${ing.color}"></span>
+              <span class="text-[10px] sm:text-[11px] font-bold ${labelClass} whitespace-nowrap">${label}</span>
+            </div>
+          `;
+        }).join('');
+
+        const patiencePct = Math.max(0, Math.min(100, order.patience ?? 100));
+        const barColor = patiencePct <= 35 ? 'bg-rose-500' : (patiencePct <= 60 ? 'bg-amber-400' : 'bg-cyan-400');
+
+        return `
+          <div id="${domId}" class="flex flex-col items-center">
+            <div class="relative bg-[#141926]/95 border ${order.mood === 'urgent' ? 'border-rose-500/60' : 'border-white/15'} rounded-2xl px-2 py-1.5 sm:px-2.5 sm:py-2 shadow-xl w-full flex flex-col gap-1.5">
+              <div class="flex items-center justify-center gap-2">
+                <div class="mini-cup">${layersVisual}</div>
+                <div class="flex flex-col justify-center gap-1">${layersText}</div>
+              </div>
+              ${compact ? '' : `
+                <div class="w-full h-1 rounded-full bg-white/10 overflow-hidden">
+                  <div class="h-full ${barColor} transition-all duration-200" style="width:${patiencePct}%"></div>
+                </div>
+              `}
+              <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-[#141926] border-r border-b border-white/15 rotate-45"></div>
+            </div>
+            ${compact ? '' : `<div class="mt-1">${createCatSVG(order.breedIdx, order.mood || 'waiting', 'w-14 h-14 sm:w-20 sm:h-20')}</div>`}
+          </div>
+        `;
+      }
+
+      renderCupDOM(domId, layers, animateLast) {
+        const el = document.getElementById(domId);
+        if (!el) return;
+        el.innerHTML = '';
+        layers.forEach((ingId, idx) => {
+          const ing = ING_MAP[ingId];
+          const div = document.createElement('div');
+          div.className = `liquid-layer ${ing.extraClass}`;
+          div.style.background = ing.gradient;
+          if (!animateLast || idx < layers.length - 1) {
+            div.style.animation = 'none';
+          }
+          el.appendChild(div);
+        });
+      }
+
+      shakeCup(domId) {
+        const el = document.getElementById(domId);
+        if (!el) return;
+        el.classList.remove('cup-shake');
+        void el.offsetWidth;
+        el.classList.add('cup-shake');
+      }
+
+      getFunTitle(player, rank) {
+        if (rank === 0 && player.score > 0) return '🏆 深夜手冲王';
+        if ((player.sabotagesUsed || 0) >= 2) return '😈 头号捣蛋猫';
+        if ((player.maxCombo || 0) >= 5) return '🔥 极速连击手';
+        if ((player.served || 0) <= 3) return '🍵 淡定摸鱼猫';
+        return '☕ 深夜咖啡师';
+      }
+
+      showPodium(rankedPlayers, isOnline) {
+        const modal = document.getElementById('modal-podium');
+        const listEl = document.getElementById('podium-list');
+        const winner = rankedPlayers[0];
+
+        document.getElementById('podium-title').textContent = winner
+          ? `${winner.name} 夺得抢单王！`
+          : '本局营业结束';
+
+        const medals = ['🥇', '🥈', '🥉', '🐾'];
+        listEl.innerHTML = rankedPlayers.map((p, idx) => {
+          const title = this.getFunTitle(p, idx);
+          return `
+            <div class="flex items-center justify-between gap-3 p-3 rounded-2xl border ${idx === 0 ? 'bg-amber-400/15 border-amber-400/50' : 'bg-[#0b0d14]/80 border-white/10'}">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="text-xl shrink-0">${medals[idx] || '🐾'}</span>
+                ${createCatSVG(p.avatarIdx || 0, idx === 0 ? 'happy' : 'waiting', 'w-11 h-11')}
+                <div class="min-w-0">
+                  <div class="text-sm font-black text-white truncate">${escapeHtml(p.name)}</div>
+                  <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span class="px-1.5 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-amber-200">${title}</span>
+                    <span class="text-[10px] text-slate-400">出杯 ${p.served || 0} · 连击 ${p.maxCombo || 0} · 捣乱 ${p.sabotagesUsed || 0}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-lg sm:text-xl font-black text-amber-400 tabular-nums">${p.score || 0}</div>
+                <div class="text-[10px] text-slate-500">积分</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        const rematchBtn = document.getElementById('btn-podium-rematch');
+        if (isOnline && !this.isHost) {
+          rematchBtn.textContent = '催房主再来一局！';
+        } else {
+          rematchBtn.textContent = '再来一局！';
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      hidePodium() {
+        const modal = document.getElementById('modal-podium');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        window.catCafeApp = new MidnightCatCafeP2P();
+      } catch (err) {
+        console.error('初始化失败:', err);
+      }
+    });
+  </script>
+</body>
+</html>
